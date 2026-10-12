@@ -1,0 +1,225 @@
+{
+  "schema_version": "1.0",
+  "coordinate_system": "PDF points; x right, y down; bbox=[x0, top, x1, bottom] in pdfplumber page coordinates",
+  "indexing": "page is 1-based; row and column are 0-based",
+  "cell_text_in_json": false,
+  "overlays_include_original_page": true,
+  "model_input": "geometry_only",
+  "model_requested": null,
+  "strategy": "text",
+  "pages": [
+    {
+      "page": 2,
+      "width": 612,
+      "height": 792,
+      "page_bbox": [
+        0,
+        0,
+        612,
+        792
+      ],
+      "rotation": 0,
+      "status": "candidates_detected",
+      "tables": [
+        {
+          "bbox": [
+            56.0,
+            137.277,
+            441.906,
+            270.277
+          ],
+          "method": "text",
+          "row_count": 4,
+          "column_count": 3,
+          "x_boundaries": [
+            56.0,
+            171.093,
+            334.674,
+            441.906
+          ],
+          "y_boundaries": [
+            137.277,
+            165.777,
+            203.777,
+            241.777,
+            270.277
+          ],
+          "cells": [
+            {
+              "id": "c0000",
+              "row": 0,
+              "column": 0,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                56.0,
+                137.277,
+                171.093,
+                165.777
+              ]
+            },
+            {
+              "id": "c0001",
+              "row": 0,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                171.093,
+                137.277,
+                334.674,
+                165.777
+              ]
+            },
+            {
+              "id": "c0002",
+              "row": 0,
+              "column": 2,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                334.674,
+                137.277,
+                441.906,
+                165.777
+              ]
+            },
+            {
+              "id": "c0003",
+              "row": 1,
+              "column": 0,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                56.0,
+                165.777,
+                171.093,
+                203.777
+              ]
+            },
+            {
+              "id": "c0004",
+              "row": 1,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                171.093,
+                165.777,
+                334.674,
+                203.777
+              ]
+            },
+            {
+              "id": "c0005",
+              "row": 1,
+              "column": 2,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                334.674,
+                165.777,
+                441.906,
+                203.777
+              ]
+            },
+            {
+              "id": "c0006",
+              "row": 2,
+              "column": 0,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                56.0,
+                203.777,
+                171.093,
+                241.777
+              ]
+            },
+            {
+              "id": "c0007",
+              "row": 2,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                171.093,
+                203.777,
+                334.674,
+                241.777
+              ]
+            },
+            {
+              "id": "c0008",
+              "row": 2,
+              "column": 2,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                334.674,
+                203.777,
+                441.906,
+                241.777
+              ]
+            },
+            {
+              "id": "c0009",
+              "row": 3,
+              "column": 0,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                56.0,
+                241.777,
+                171.093,
+                270.277
+              ]
+            },
+            {
+              "id": "c0010",
+              "row": 3,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                171.093,
+                241.777,
+                334.674,
+                270.277
+              ]
+            },
+            {
+              "id": "c0011",
+              "row": 3,
+              "column": 2,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                334.674,
+                241.777,
+                441.906,
+                270.277
+              ]
+            }
+          ],
+          "warnings": [
+            "experimental_borderless_detection",
+            "whitespace_row_bands_collapsed",
+            "wrapped_text_may_be_split_into_rows",
+            "boundaries_inferred_from_word_gaps"
+          ],
+          "id": "p002_t01"
+        }
+      ],
+      "warnings": [],
+      "detection_seconds": 0.0038,
+      "baseline_overlay": "page-002-baseline.png"
+    }
+  ],
+  "metrics": {
+    "wall_seconds": 0.23,
+    "page_count": 1,
+    "table_candidates": 1,
+    "process_peak_rss_mb": 68.64
+  }
+}

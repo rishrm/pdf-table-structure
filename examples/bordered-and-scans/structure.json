@@ -1,0 +1,463 @@
+{
+  "schema_version": "1.0",
+  "coordinate_system": "PDF points; x right, y down; bbox=[x0, top, x1, bottom] in pdfplumber page coordinates",
+  "indexing": "page is 1-based; row and column are 0-based",
+  "cell_text_in_json": false,
+  "overlays_include_original_page": true,
+  "model_input": "geometry_only",
+  "model_requested": null,
+  "strategy": "lines",
+  "pages": [
+    {
+      "page": 1,
+      "width": 612,
+      "height": 792,
+      "page_bbox": [
+        0,
+        0,
+        612,
+        792
+      ],
+      "rotation": 0,
+      "status": "candidates_detected",
+      "tables": [
+        {
+          "bbox": [
+            60.0,
+            140.0,
+            460.0,
+            300.0
+          ],
+          "method": "lines",
+          "row_count": 4,
+          "column_count": 3,
+          "x_boundaries": [
+            60.0,
+            180.0,
+            320.0,
+            460.0
+          ],
+          "y_boundaries": [
+            140.0,
+            180.0,
+            220.0,
+            260.0,
+            300.0
+          ],
+          "cells": [
+            {
+              "id": "c0000",
+              "row": 0,
+              "column": 0,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                60.0,
+                140.0,
+                180.0,
+                180.0
+              ]
+            },
+            {
+              "id": "c0001",
+              "row": 0,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 2,
+              "bbox": [
+                180.0,
+                140.0,
+                460.0,
+                180.0
+              ]
+            },
+            {
+              "id": "c0002",
+              "row": 1,
+              "column": 0,
+              "row_span": 2,
+              "column_span": 1,
+              "bbox": [
+                60.0,
+                180.0,
+                180.0,
+                260.0
+              ]
+            },
+            {
+              "id": "c0003",
+              "row": 1,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                180.0,
+                180.0,
+                320.0,
+                220.0
+              ]
+            },
+            {
+              "id": "c0004",
+              "row": 1,
+              "column": 2,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                320.0,
+                180.0,
+                460.0,
+                220.0
+              ]
+            },
+            {
+              "id": "c0005",
+              "row": 2,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                180.0,
+                220.0,
+                320.0,
+                260.0
+              ]
+            },
+            {
+              "id": "c0006",
+              "row": 2,
+              "column": 2,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                320.0,
+                220.0,
+                460.0,
+                260.0
+              ]
+            },
+            {
+              "id": "c0007",
+              "row": 3,
+              "column": 0,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                60.0,
+                260.0,
+                180.0,
+                300.0
+              ]
+            },
+            {
+              "id": "c0008",
+              "row": 3,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                180.0,
+                260.0,
+                320.0,
+                300.0
+              ]
+            },
+            {
+              "id": "c0009",
+              "row": 3,
+              "column": 2,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                320.0,
+                260.0,
+                460.0,
+                300.0
+              ]
+            }
+          ],
+          "warnings": [],
+          "id": "p001_t01"
+        },
+        {
+          "bbox": [
+            60.0,
+            380.0,
+            200.0,
+            460.0
+          ],
+          "method": "lines",
+          "row_count": 2,
+          "column_count": 2,
+          "x_boundaries": [
+            60.0,
+            130.0,
+            200.0
+          ],
+          "y_boundaries": [
+            380.0,
+            420.0,
+            460.0
+          ],
+          "cells": [
+            {
+              "id": "c0000",
+              "row": 0,
+              "column": 0,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                60.0,
+                380.0,
+                130.0,
+                420.0
+              ]
+            },
+            {
+              "id": "c0001",
+              "row": 0,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                130.0,
+                380.0,
+                200.0,
+                420.0
+              ]
+            },
+            {
+              "id": "c0002",
+              "row": 1,
+              "column": 0,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                60.0,
+                420.0,
+                130.0,
+                460.0
+              ]
+            },
+            {
+              "id": "c0003",
+              "row": 1,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                130.0,
+                420.0,
+                200.0,
+                460.0
+              ]
+            }
+          ],
+          "warnings": [],
+          "id": "p001_t02"
+        },
+        {
+          "bbox": [
+            320.0,
+            380.0,
+            460.0,
+            460.0
+          ],
+          "method": "lines",
+          "row_count": 2,
+          "column_count": 2,
+          "x_boundaries": [
+            320.0,
+            390.0,
+            460.0
+          ],
+          "y_boundaries": [
+            380.0,
+            420.0,
+            460.0
+          ],
+          "cells": [
+            {
+              "id": "c0000",
+              "row": 0,
+              "column": 0,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                320.0,
+                380.0,
+                390.0,
+                420.0
+              ]
+            },
+            {
+              "id": "c0001",
+              "row": 0,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                390.0,
+                380.0,
+                460.0,
+                420.0
+              ]
+            },
+            {
+              "id": "c0002",
+              "row": 1,
+              "column": 0,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                320.0,
+                420.0,
+                390.0,
+                460.0
+              ]
+            },
+            {
+              "id": "c0003",
+              "row": 1,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                390.0,
+                420.0,
+                460.0,
+                460.0
+              ]
+            }
+          ],
+          "warnings": [],
+          "id": "p001_t03"
+        }
+      ],
+      "warnings": [],
+      "detection_seconds": 0.0049,
+      "baseline_overlay": "page-001-baseline.png"
+    },
+    {
+      "page": 4,
+      "width": 612,
+      "height": 792,
+      "page_bbox": [
+        0,
+        0,
+        612,
+        792
+      ],
+      "rotation": 0,
+      "status": "needs_vision",
+      "tables": [],
+      "warnings": [
+        "no_table_candidates_detected",
+        "raster_content_needs_vision_or_ocr_not_implemented"
+      ],
+      "detection_seconds": 0.0006,
+      "baseline_overlay": "page-004-baseline.png"
+    },
+    {
+      "page": 5,
+      "width": 612,
+      "height": 792,
+      "page_bbox": [
+        0,
+        0,
+        612,
+        792
+      ],
+      "rotation": 90,
+      "status": "candidates_detected",
+      "tables": [
+        {
+          "bbox": [
+            392.0,
+            60.0,
+            472.0,
+            200.0
+          ],
+          "method": "lines",
+          "row_count": 2,
+          "column_count": 2,
+          "x_boundaries": [
+            392.0,
+            432.0,
+            472.0
+          ],
+          "y_boundaries": [
+            60.0,
+            130.0,
+            200.0
+          ],
+          "cells": [
+            {
+              "id": "c0000",
+              "row": 0,
+              "column": 0,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                392.0,
+                60.0,
+                432.0,
+                130.0
+              ]
+            },
+            {
+              "id": "c0001",
+              "row": 0,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                432.0,
+                60.0,
+                472.0,
+                130.0
+              ]
+            },
+            {
+              "id": "c0002",
+              "row": 1,
+              "column": 0,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                392.0,
+                130.0,
+                432.0,
+                200.0
+              ]
+            },
+            {
+              "id": "c0003",
+              "row": 1,
+              "column": 1,
+              "row_span": 1,
+              "column_span": 1,
+              "bbox": [
+                432.0,
+                130.0,
+                472.0,
+                200.0
+              ]
+            }
+          ],
+          "warnings": [],
+          "id": "p005_t01"
+        }
+      ],
+      "warnings": [],
+      "detection_seconds": 0.0012,
+      "baseline_overlay": "page-005-baseline.png"
+    }
+  ],
+  "metrics": {
+    "wall_seconds": 0.1147,
+    "page_count": 3,
+    "table_candidates": 4,
+    "process_peak_rss_mb": 70.59
+  }
+}
