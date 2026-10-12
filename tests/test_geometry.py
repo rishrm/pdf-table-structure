@@ -50,17 +50,29 @@ class GeometryTests(unittest.TestCase):
         self.assertEqual(len(table["cells"]), 12)
         self.assertEqual(check_grid(table), [])
 
-    def test_mixed_page_flags_image_content(self):
+    def test_mixed_page_detects_the_image_table(self):
         with pdfplumber.open(self.path) as pdf:
             result = detect_page(pdf.pages[2], "auto")
-        self.assertEqual(result["tables"], [])
-        self.assertIn("raster_tables_may_be_missed", result["warnings"])
+        self.assertEqual(len(result["tables"]), 1)
+        self.assertEqual(result["tables"][0]["method"], "raster")
+        self.assertEqual(len(result["tables"][0]["cells"]), 12)
 
-    def test_image_only_page_requests_vision(self):
+    def test_image_only_page_uses_pixel_detection(self):
         with pdfplumber.open(self.path) as pdf:
             result = detect_page(pdf.pages[3], "auto")
-        self.assertEqual(result["status"], "needs_vision")
-        self.assertEqual(result["tables"], [])
+        self.assertEqual(result["status"], "candidates_detected")
+        self.assertEqual(len(result["tables"]), 1)
+        self.assertEqual((result["tables"][0]["row_count"],
+                          result["tables"][0]["column_count"]), (4, 3))
+        self.assertEqual(check_grid(result["tables"][0]), [])
+
+    def test_cropped_scan_coordinates_stay_in_original_page_space(self):
+        with pdfplumber.open(self.path) as pdf:
+            result = detect_page(pdf.pages[3], "raster", bbox=[50, 130, 490, 310])
+        self.assertEqual(len(result["tables"]), 1)
+        bbox = result["tables"][0]["bbox"]
+        for actual, expected in zip(bbox, [60, 140, 480, 300]):
+            self.assertAlmostEqual(actual, expected, delta=2)
 
     def test_rotated_page_geometry(self):
         with pdfplumber.open(self.path) as pdf:
@@ -114,6 +126,17 @@ class GeometryTests(unittest.TestCase):
                 _, report = run(args)
             self.assertTrue(all(t["model_review"]["status"] == "skipped"
                                 for t in report["pages"][0]["tables"]))
+
+    def test_scan_grid_skips_model_even_if_requested(self):
+        with tempfile.TemporaryDirectory() as folder:
+            args = SimpleNamespace(pdf=str(self.path), output=folder, strategy="auto",
+                pages="4", bbox=None, tolerance=2.0, ollama_model="llama3.1:latest",
+                timeout=45, json_mode=False, no_overlays=True, dpi=120)
+            with patch("ollama_refine.propose_merges", side_effect=AssertionError("unnecessary call")):
+                _, report = run(args)
+            table = report["pages"][0]["tables"][0]
+            self.assertEqual(table["method"], "raster")
+            self.assertEqual(table["model_review"]["status"], "skipped")
 
 
 if __name__ == "__main__":

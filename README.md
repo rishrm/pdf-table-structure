@@ -1,8 +1,8 @@
 # Table Structure Lab
 
-A small CPU-based starting point for recognizing table structure in PDFs: table regions, rows, columns, cell rectangles, and merged cells. It exports no cell text into JSON. The first supported target is a machine-generated PDF with visible table borders.
+A small CPU-based starting point for recognizing table structure in PDFs: table regions, rows, columns, cell rectangles, and merged cells. It exports no cell text into JSON. It supports vector-bordered tables and has an experimental pixel route for scans with closed ruled grids.
 
-The default pipeline is **PDF geometry -> grid reconstruction -> structure JSON**. No AI model or API key is needed. An optional Ollama experiment asks a model to propose cell merges in borderless tables using coordinates only. Baseline and model proposals remain separate.
+The first pipeline is **PDF geometry -> grid reconstruction -> structure JSON**. The scan pipeline is **render page -> threshold pixels -> correct small tilt -> detect horizontal/vertical line segments -> reconstruct closed cells -> structure JSON**. Both run on the CPU with no OCR, AI model, or API key. An optional Ollama experiment asks a model to propose cell merges in text-alignment tables using coordinates only. Baseline and model proposals remain separate.
 
 ## Start here
 
@@ -12,7 +12,7 @@ Use Python 3.10 or newer. In this folder:
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-python table_structure.py /absolute/path/to/input.pdf --strategy lines --output runs/first
+python table_structure.py /absolute/path/to/input.pdf --strategy auto --output runs/first
 ```
 
 Use a new output folder each time. The input PDF is never modified.
@@ -41,6 +41,8 @@ This cell starts in the first row and second column and spans two columns:
 
 Coordinates are PDF points, normally 72 per inch, in pdfplumber's page coordinate system: `[left, top, right, bottom]`, with x increasing to the right and y downward. Page numbers are 1-based; row and column indices are 0-based. `page_bbox` and `rotation` record the page geometry. A complete detected grid is a consistency check, not proof that a candidate is a real table.
 
+Schema version 1.1 adds scan diagnostics. For a tilted scan, `bbox` remains an enclosing rectangle in original page coordinates and `polygon` records its four original-page corners. `grid_transform` describes the applied straightening rotation; `x_boundaries` and `y_boundaries` refer to the straightened grid, as stated in `grid_coordinate_system`. Overlays use polygons for these cells so they follow the original tilt. Row and column indices are unchanged by the coordinate transform.
+
 ## Borderless tables and page selection
 
 ```bash
@@ -52,7 +54,21 @@ python table_structure.py input.pdf --pages 1,3-5 --no-overlays --output runs/se
 
 - `lines`: use vector lines and rectangle edges. This is the recommended first experiment. Empty bordered cells are retained.
 - `text`: experimental alignment-based detection. Whitespace-only bands between text lines are collapsed, column dividers are placed in observed word gaps, and outer edges receive up to four points of padding. Multiline text may still be mistaken for separate rows; blank borderless rows may disappear. These inferred cell edges are estimates.
-- `auto` (default): try lines, then use text only if no line-based table candidates are found on that page. It can miss a borderless table beside a bordered table; use `text` with `--bbox` for that region.
+- `raster`: render the page and detect closed cell grids from image pixels. This can also be forced on digital PDFs to compare pixel detection with vector detection.
+- `auto` (default): try vector lines first. If none are found and the region contains images, try raster detection. Otherwise, if selectable text exists, try text alignment. It can miss a raster or borderless table beside a vector-bordered table; use `raster` or `text` with `--bbox` for that region. When a raster attempt fails, it does not automatically invent cells from text alignment.
+
+## Scanned and image-based tables
+
+```bash
+python table_structure.py scan.pdf --strategy raster --output runs/scan
+python table_structure.py scan.pdf --strategy raster --pages 3 --scan-dpi 144 --output runs/scan-page-3
+```
+
+The pixel route uses Pillow (already a pdfplumber dependency). It does not recognize or extract words. It thresholds grayscale pixels, estimates a straightening rotation within +/-2 degrees, detects near-solid horizontal and vertical runs, and joins nearby segments. Existing pdfplumber geometry routines reconstruct closed cells from their intersections. Cells are then exported through the same structure builder and checked for grid consistency.
+
+Rendering defaults to 144 dpi with a maximum dimension of 2200 pixels. `--scan-dpi` accepts 72-200. Pixel counts, line counts, and intersection counts are bounded; overly complex inputs receive a warning instead of unbounded processing. `--no-overlays` avoids preview rendering, but scan analysis itself still requires rasterization.
+
+This first scan route needs enough horizontal **and** vertical boundaries to form closed cells. Tables with only top/bottom rules, vertical separators only in the header, no borders, or severe degradation can still return zero candidates. `needs_fallback` means this method could not recover a grid, not that the page has no tables. Missing borders can also look like merged cells. Always inspect overlays; consistency checks do not prove accuracy.
 
 ## Optional: your Ollama endpoint
 
@@ -90,7 +106,7 @@ The `format` field supplies a JSON Schema. If your proxy rejects schema format, 
 
 Only allowlisted cell IDs, row/column indices, spans, normalized bounding boxes, and word bounding boxes are sent. Document text, filenames, metadata, and page images are omitted. Word positions are derived using text segmentation locally; geometry still reveals layout and approximate word lengths.
 
-The model can propose **merges of existing adjacent cells**, which helps test whether a small model can group text lines or cells more sensibly. It cannot discover a missed table, create new boundaries, split a cell, read a scan, or identify a semantic header from its meaning. Drawn-border tables skip the model entirely because their geometry already supplies the grid.
+The model can propose **merges of existing adjacent cells**, which helps test whether a small model can group text lines or cells more sensibly. It cannot discover a missed table, create new boundaries, split a cell, read a scan, or identify a semantic header from its meaning. Vector-line and raster-grid candidates skip the model because their detected borders supply the structure. Scan handling is local image processing, independent of the Ollama adapter.
 
 Valid proposals appear in `model_candidate` and a separate `page-001-proposed.png`. The baseline stays intact. Invalid IDs, nonrectangular groups, overlapping merges, malformed output, and truncated responses are rejected. Structurally valid proposals can still be wrong and require visual comparison. Oversize inputs are skipped instead of truncated; model requests are capped by input, prompt, output, and timeout limits.
 
@@ -102,9 +118,10 @@ python -m unittest discover -s tests -v
 python make_demo.py --output demo.pdf
 python table_structure.py demo.pdf --strategy lines --pages 1,4,5 --output runs/demo-bordered
 python table_structure.py demo.pdf --strategy text --pages 2 --bbox 50 125 500 290 --output runs/demo-borderless
+python table_structure.py demo.pdf --strategy auto --pages 4 --output runs/demo-raster
 ```
 
-The bundled `examples/` contains the resulting structure JSON and overlays from local synthetic tests. The tests cover merged rows and columns, an empty bordered cell, neighboring tables, a cropped region, a rotated page, a simple borderless table, raster pages, geometry-only JSON, and the model adapter with mocked responses. They do not measure accuracy on real documents or real model performance.
+The bundled `examples/` contains structure JSON and overlays from local synthetic tests; `examples/raster/` demonstrates the pixel route. Tests cover merged rows and columns, empty cells, neighboring tables, crops, page rotation, simple borderless alignment, image-only and mixed pages, mild scan skew, small line gaps, paragraph rejection, bounded failure, geometry-only JSON, and the model adapter with mocked responses. These checks are not a representative document-accuracy benchmark or real model benchmark.
 
 `metrics.wall_seconds` includes detection and, if requested, rendering and model calls. Each page also records `detection_seconds`. `process_peak_rss_mb` measures the local Python process on macOS/Linux, including rendering; it does not measure the remote model's memory or power. Successful model responses can include server-reported token counts and durations in `model_review.metrics`. No electricity or API price estimate is inferred from these numbers.
 
@@ -116,13 +133,13 @@ Choose the cheapest method that meets your actual accuracy target. For clean bor
 
 ## Limits and next stages
 
-- Scanned or image-only tables need a vision/table-structure stage. It is **not implemented** in this first version. Image-only pages are marked `needs_vision`; mixed pages warn that raster tables may be missed. A scan with an OCR text layer can enter the experimental text route, but the original image geometry is not analyzed.
+- Closed ruled scans have an experimental pixel route. Partially ruled and borderless scans still need a fallback based on word/ink layout or a specialist structure model. OCR text layers are not required by the pixel route.
 - Wrapped text, implied empty cells, skewed tables, shading-only boundaries, and broken borders can produce wrong candidates.
 - Single-row or single-column candidates are skipped to reduce false positives.
 - Every page is processed independently. Tables continued across pages are not joined.
 - Headers are not classified, and a missing border may look like a true merged cell. Inspect overlays rather than treating a valid grid as confirmed structure.
 
-The next stage for all PDF types would be: rasterize only candidate table regions, run a specialist structure model such as Table Transformer or TableFormer, and translate its output into the same JSON schema. Benchmark that vision stage against the geometry baseline before optimizing or quantizing it.
+The next stage for difficult scans is to infer boundaries from ink alignment/whitespace or run a specialist structure model such as Table Transformer or TableFormer on candidate table crops. Its output should enter the same JSON schema. Benchmark that fallback against the geometry and pixel baselines before optimizing or quantizing it.
 
 ## Primary references
 
@@ -130,3 +147,4 @@ The next stage for all PDF types would be: rasterize only candidate table region
 - [Ollama chat API](https://docs.ollama.com/api/chat)
 - [Ollama structured outputs](https://docs.ollama.com/capabilities/structured-outputs)
 - [Microsoft Table Transformer](https://github.com/microsoft/table-transformer)
+- [Pillow image processing](https://pillow.readthedocs.io/en/stable/reference/Image.html)

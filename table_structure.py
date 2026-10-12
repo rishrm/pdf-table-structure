@@ -172,7 +172,7 @@ def apply_merges(table, groups):
     return result
 
 
-def detect_page(page, strategy="auto", bbox=None, tolerance=2.0):
+def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144):
     region = page.crop(tuple(bbox)) if bbox else page
     warnings = []
     # Conservative auto mode avoids applying text detection to a whole page
@@ -181,16 +181,28 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0):
     settings = {"vertical_strategy": method, "horizontal_strategy": method,
                 "snap_tolerance": tolerance, "join_tolerance": tolerance,
                 "intersection_tolerance": tolerance}
-    raw_tables = region.find_tables(settings)
+    raw_tables = [] if strategy == "raster" else region.find_tables(settings)
+    raster_attempted = strategy == "raster" or (
+        strategy == "auto" and not raw_tables and bool(region.images))
+    raster_diagnostics = None
+    transform = None
+    if raster_attempted:
+        from raster_structure import page_grids
+        raw_tables, transform, raster_diagnostics = page_grids(
+            region, dpi=scan_dpi, tolerance=tolerance)
+        method = "raster"
+        warnings.extend(raster_diagnostics["warnings"])
+        warnings.append("raster_borderless_or_broken_tables_may_be_missed")
     boxes = None
-    if strategy == "auto" and not raw_tables and region.chars:
+    if strategy == "auto" and not raw_tables and region.chars and not raster_attempted:
         method = "text"
         settings.update(vertical_strategy="text", horizontal_strategy="text")
         raw_tables = region.find_tables(settings)
     tables = []
     for raw_table in raw_tables:
         try:
-            table = structure_from_cells(raw_table.cells, method,
+            raw_cells = raw_table if method == "raster" else raw_table.cells
+            table = structure_from_cells(raw_cells, method,
                                          tolerance=min(tolerance, 1.0))
         except ValueError:
             warnings.append("invalid_candidate_geometry_skipped")
@@ -204,32 +216,49 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0):
         if table["row_count"] < 2 or table["column_count"] < 2:
             warnings.append("single_row_or_column_candidate_skipped")
             continue
+        if method == "raster":
+            from raster_structure import map_to_original
+            table["warnings"].append("experimental_raster_detection_requires_review")
+            map_to_original(table, transform)
         table["id"] = f"p{page.page_number:03d}_t{len(tables) + 1:02d}"
         tables.append(table)
     if strategy == "auto" and tables and method == "lines":
         warnings.append("auto_mode_does_not_search_for_additional_borderless_tables")
-    if not region.chars and region.images:
-        warnings.append("raster_content_needs_vision_or_ocr_not_implemented")
-    elif region.images:
+    if not region.chars and region.images and not raster_attempted:
+        warnings.append("use_auto_or_raster_strategy_for_image_content")
+    elif region.images and not raster_attempted:
         warnings.append("raster_tables_may_be_missed")
     if not tables:
         warnings.append("no_table_candidates_detected")
-    return {"page": page.page_number, "width": page.width, "height": page.height,
+    result = {"page": page.page_number, "width": page.width, "height": page.height,
             "page_bbox": list(page.bbox), "rotation": page.rotation,
             "status": "candidates_detected" if tables else
-                ("needs_vision" if not region.chars and region.images else "no_candidates"),
+                ("needs_fallback" if raster_attempted else
+                 ("needs_vision" if not region.chars and region.images else "no_candidates")),
             "tables": tables, "warnings": sorted(set(warnings))}
+    if raster_diagnostics is not None:
+        result["raster_detection"] = raster_diagnostics
+    return result
 
 
 def render_overlay(page, tables, path, dpi=120, candidate=False):
     image = page.to_image(resolution=dpi, antialias=True)
+
+    def outline(item, color, width):
+        if "polygon" in item:
+            points = item["polygon"]
+            for start, end in zip(points, points[1:] + points[:1]):
+                image.draw_line((tuple(start), tuple(end)), stroke=color, stroke_width=width)
+        else:
+            image.draw_rect(tuple(item["bbox"]), fill=None, stroke=color, stroke_width=width)
+
     for entry in tables:
         table = entry.get("model_candidate", entry) if candidate else entry
-        image.draw_rect(tuple(table["bbox"]), fill=None, stroke="#172554", stroke_width=3)
+        outline(table, "#172554", 3)
         for cell in table["cells"]:
             merged = cell["row_span"] > 1 or cell["column_span"] > 1
             color = "#d97706" if merged else "#0891b2"
-            image.draw_rect(tuple(cell["bbox"]), fill=None, stroke=color, stroke_width=2)
+            outline(cell, color, 2)
     image.save(str(path), quantize=False)
 
 
@@ -261,7 +290,7 @@ def run(args):
     if output_dir.exists() and any(output_dir.iterdir()):
         raise ValueError("Output folder must be empty; choose a new folder for each run")
     output_dir.mkdir(parents=True, exist_ok=True)
-    report = {"schema_version": "1.0", "coordinate_system":
+    report = {"schema_version": "1.1", "coordinate_system":
               "PDF points; x right, y down; bbox=[x0, top, x1, bottom] in pdfplumber page coordinates",
               "indexing": "page is 1-based; row and column are 0-based",
               "cell_text_in_json": False, "overlays_include_original_page": not args.no_overlays,
@@ -272,7 +301,8 @@ def run(args):
         for number in selected:
             page_started = time.perf_counter()
             page = document.pages[number - 1]
-            result = detect_page(page, args.strategy, args.bbox, args.tolerance)
+            result = detect_page(page, args.strategy, args.bbox, args.tolerance,
+                                 getattr(args, "scan_dpi", 144))
             result["detection_seconds"] = round(time.perf_counter() - page_started, 4)
             if args.ollama_model:
                 from ollama_refine import propose_merges
@@ -280,9 +310,9 @@ def run(args):
                 for table in result["tables"]:
                     # Model proposals are useful only for inferred borderless cells.
                     # Actual drawn borders are already stronger evidence.
-                    if table["method"] == "lines":
+                    if table["method"] in ("lines", "raster"):
                         table["model_review"] = {"status": "skipped",
-                            "reason": "drawn_borders_used_as_structure", "merges": []}
+                            "reason": "detected_borders_used_as_structure", "merges": []}
                         continue
                     if check_grid(table):
                         table["model_review"] = {"status": "skipped",
@@ -329,13 +359,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("pdf", help="Input PDF (never modified)")
     parser.add_argument("--output", default="runs/baseline", help="New, empty output folder")
-    parser.add_argument("--strategy", choices=["auto", "lines", "text"], default="auto")
+    parser.add_argument("--strategy", choices=["auto", "lines", "text", "raster"], default="auto")
     parser.add_argument("--pages", help="1-based selection, e.g. 1,3-5")
     parser.add_argument("--bbox", type=float, nargs=4, metavar=("X0", "TOP", "X1", "BOTTOM"),
                         help="Restrict detection to a known region, in PDF points")
     parser.add_argument("--tolerance", type=float, default=2.0, help="Line snapping tolerance in points")
     parser.add_argument("--no-overlays", action="store_true", help="Export JSON only; avoid rendering cost")
     parser.add_argument("--dpi", type=int, default=120, help="Local overlay rendering resolution")
+    parser.add_argument("--scan-dpi", type=int, default=144,
+                        help="Pixel detection resolution (72-200); dimensions capped at 2200 pixels")
     parser.add_argument("--ollama-model", help="Opt-in model alias, e.g. llama3.1:latest, oss, gemma3.1")
     parser.add_argument("--timeout", type=float, default=45, help="HTTP timeout seconds")
     parser.add_argument("--json-mode", action="store_true", help="Use format=json instead of JSON Schema")
@@ -344,6 +376,8 @@ def main():
         parser.error("tolerance must be greater than 0 and no more than 20")
     if not 36 <= args.dpi <= 300:
         parser.error("dpi must be between 36 and 300")
+    if not 72 <= args.scan_dpi <= 200:
+        parser.error("scan-dpi must be between 72 and 200")
     if not math.isfinite(args.timeout) or not 0 < args.timeout <= 120:
         parser.error("timeout must be greater than 0 and no more than 120")
     try:

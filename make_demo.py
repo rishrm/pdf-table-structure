@@ -67,7 +67,7 @@ def make_demo(path):
             text(x, 150 + row * 38, value)
     document.showPage()
 
-    title("Table structure / scanned", "Image-only table: this first version should flag that a vision stage is needed.")
+    title("Table structure / scanned", "Image-only table: the raster route should reconstruct this grid from pixels.")
     image = Image.new("RGB", (840, 320), "white")
     draw = ImageDraw.Draw(image)
     for x in (0, 280, 560, 839):
