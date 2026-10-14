@@ -1,0 +1,25 @@
+PDF table parser validation - 2026-10-14
+Code SHA-256: 38e78fa87f62329f771b51fe17aa62c7ef0be247279b3e6317c4a57f9d0024ed
+Automatic tests: 70 passed.
+Scans: 18 pages across 951276.pdf and 951436.pdf; 5 manually identified physical tables.
+Candidate coverage: 4/4 table-bearing pages; 0/14 negative pages with candidates.
+Returned 6 fragments, including a split header/body pair. This is not full-grid accuracy.
+Scans took 6.72s including overlays; maximum single-process peak RSS 416.56 MB on this Mac.
+No OCR, LLM calls, or API credentials used. All returned tables remain unreviewed.
+
+951276.pdf
+  Page 7: expected 6x8; candidate(s) 6x8. Dimensions and three grouped header spans match; cell edges remain inferred and unreviewed.
+  Page 9: expected 5x3; candidate(s) 6x3. Three columns found, but an extra caption band adds a row.
+  Page 10: expected 6x5; candidate(s) 6x3. Count and measurement columns are merged: three inferred columns instead of five.
+
+951436.pdf
+  Page 3: expected 5x10; candidate(s) 3x9, 8x5. Header and body are separate fragments; columns are omitted or merged and wrapped values become separate rows.
+  Page 3: expected 5x3; candidate(s) 5x3. Dimensions coincide, but the header is omitted and a footnote adds a row; this is not a correct grid.
+
+Additional smoke checks: all 16 pages of 953816.pdf and 965313.pdf processed successfully. Full grids were not benchmarked.
+Limitation: Page-level candidate coverage is not full table-structure accuracy.
+Limitation: Six fragments represent five physical tables; one header/body pair remains split.
+Limitation: Missing columns, caption/footnote leakage and wrapped logical rows remain unresolved.
+Limitation: Rules were tuned using these PDFs; this is not a held-out benchmark.
+Limitation: Wall time and process memory do not measure electricity use or very-low-power hardware performance.
+Limitation: Conservative gates can reject legitimate small or narrative borderless tables.

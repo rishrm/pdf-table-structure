@@ -1,1 +1,2 @@
 pdfplumber==0.11.9
+img2table==2.0.0
