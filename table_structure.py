@@ -341,6 +341,9 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
             if method == "img2table" and backend_details and not reasons:
                 group_metadata = backend_details.get("returned_group_metadata", [])
                 metadata = group_metadata[raw_index] if raw_index < len(group_metadata) else {}
+                if metadata.get("layout_repair", {}).get("status") == "repaired":
+                    candidate["layout_repair"] = metadata["layout_repair"]
+                    candidate["warnings"].append("rule_anchored_layout_repair_requires_review")
                 image_reasons, evidence = image_evidence(candidate, metadata,
                     backend_details.get("horizontal_rules", []))
                 candidate.setdefault("evidence", {}).update(evidence)
@@ -383,7 +386,7 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
             warnings.append(f"{method}_backend_failed:{type(exc).__name__}")
 
     def image_backend(method, dpi):
-        nonlocal image_attempted
+        nonlocal image_attempted, boxes
         image_attempted = True
         try:
             if method == "raster":
@@ -391,6 +394,30 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
             else:
                 from img2table_structure import page_grids
             groups, transform, details = page_grids(region, dpi=dpi, tolerance=tolerance)
+            if method == "img2table" and region.chars and groups:
+                try:
+                    from layout_repair import repair_word_groups
+                    if boxes is None:
+                        boxes = word_boxes_only(region)
+                    repaired, notes = repair_word_groups(groups, details.get("horizontal_rules", []), boxes)
+                    old_metadata = details.get("returned_group_metadata", [])
+                    new_metadata = []
+                    for cells, note in zip(repaired, notes):
+                        source_index = note["source_group_indices"][0]
+                        item = dict(old_metadata[source_index]) if source_index < len(old_metadata) else {}
+                        if note["status"] == "repaired":
+                            item.update(bbox=note["bbox"], unique_cells=len(cells), layout_repair=note,
+                                pixel_evidence={"status": "unavailable", "reason": "native_layout_rebuilt_region"})
+                        new_metadata.append(item)
+                    groups = repaired
+                    details["returned_group_metadata"] = new_metadata
+                    details["returned_tables"] = len(groups)
+                    details["unique_cells"] = sum(len(group) for group in groups)
+                    details["native_layout_repaired_tables"] = sum(note["status"] == "repaired" for note in notes)
+                except MemoryError:
+                    raise
+                except Exception as exc:
+                    warnings.append(f"native_layout_repair_failed:{type(exc).__name__}")
             diagnostics[f"{method}_detection"] = details
             warnings.extend(details.get("warnings", []))
             ingest(groups, method, transform, details)
@@ -496,7 +523,7 @@ def run(args):
             input_digest.update(chunk)
     report["input_sha256"] = input_digest.hexdigest()
     code = hashlib.sha256()
-    for name in ("table_structure.py", "raster_structure.py", "img2table_structure.py", "ollama_refine.py"):
+    for name in ("table_structure.py", "raster_structure.py", "img2table_structure.py", "layout_repair.py", "ollama_refine.py"):
         code.update((Path(__file__).parent / name).read_bytes())
     report["code_sha256"] = code.hexdigest()
     report["effective_settings"] = {"strategy": args.strategy, "pages": args.pages,
@@ -508,7 +535,8 @@ def run(args):
         "minimum_rows": 2, "minimum_columns": 2, "maximum_word_cut_fraction": 0.18,
         "maximum_candidate_cells": 4096, "maximum_grid_slots": 65536,
         "minimum_unruled_layout_rows": 4, "duplicate_iou": 0.65,
-        "graphic_large_ink_limit": 0.55, "graphic_character_ink_limit": 0.35}
+        "graphic_large_ink_limit": 0.55, "graphic_character_ink_limit": 0.35,
+        "rule_anchored_layout_repair": True}
     report["dependency_versions"] = {}
     for name in ("pdfplumber", "pdfminer.six", "Pillow", "pypdfium2", "img2table",
                  "opencv-contrib-python", "numpy"):

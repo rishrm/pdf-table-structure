@@ -1,0 +1,36 @@
+Layout repair validation - 2026-10-14
+Code SHA-256: dd0dd71b66d623d1e72abf84a25712b0853b526f489f0f411827a4dbbce8864d
+Automatic tests: 80 passed. All 34 pages of the same four PDFs processed successfully.
+No OCR, model calls, or API credentials used. Structure JSON contains no cell text.
+
+Scanned PDFs: 18 pages, 5 physical tables, 5 returned grids (previously 6 fragments).
+All 5 tables now match logical row/column counts, required grouped-header spans, and approximate outer bounds within 5 PDF points.
+Candidates remain on all 4 table-bearing pages and none of the 14 negative pages.
+Scans: 6.7572 seconds including overlays; maximum single-process peak RSS 412.08 MB on this Mac.
+
+Before -> after, dimensions are rows x columns:
+  951276-p7-t1: 6x8 -> 6x8; expected 6x8.
+  951276-p9-t1: 6x3 -> 5x3; expected 5x3.
+  951276-p10-t1: 6x3 -> 6x5; expected 6x5.
+  951436-p3-t1: 3x9 + 8x5 -> 5x10; expected 5x10.
+  951436-p3-t2: 5x3 -> 5x3; expected 5x3.
+  953816-p2-t1: 4x5 + 10x7 -> 13x7; expected 13x7.
+
+Visual review confirmed grouped headers, restored count/measurement subcolumns, wrapped values/labels within logical rows, and caption/footnote exclusion on the repaired tables.
+953816.pdf now has one 13x7 grid on page 2; its other 3 pages have no candidates.
+The 4 existing vector-table cell grids in 965313.pdf are identical to the previous results; no new candidates appeared.
+
+What changed:
+  Printed rules anchor the header and table bounds. Persistent body gaps or printed header dividers recover columns.
+  Repeated leftmost labels group numeric continuation lines. Header dividers distinguish wrapped labels from stacked header groups.
+  On selectable PDFs, matching header/body columns and repeated values group wrapped row labels using word positions only.
+  Nearby compatible fragments are rebuilt together; uncertain cases keep their previous geometry.
+
+Limits:
+  This is a development regression set, not an unseen-document accuracy estimate.
+  The scan annotations predate this repair; the additional digital annotation was made during this implementation.
+  Reference checks do not certify every cell edge, semantic grouping, or arbitrary unseen layout. Outputs remain marked unreviewed.
+  Missing rules, sparse row anchors, empty borderless rows, and skewed or ambiguous structures can still fail.
+  Timing and process memory are not electricity measurements or benchmarks on very-low-power hardware.
+
+Machine-readable comparisons: scan-comparison.json and additional-comparison.json beside the PDF run folders.

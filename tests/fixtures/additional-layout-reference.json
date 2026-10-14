@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "annotation_method": "Manual visual review during development on 2026-10-14; not an independent or held-out benchmark.",
+  "coordinate_system": "PDF points, x right, y down; bbox [left, top, right, bottom]; page numbers 1-based",
+  "evaluation_policy": {
+    "bbox_tolerance_points": 5,
+    "count_rows": "One logical header row and twelve body records. Wrapped labels and stacked header month/year labels stay within their logical cells.",
+    "exclude_from_grid": ["table title", "footnotes", "running header", "page number"],
+    "content_policy": "Geometry only; no document text is transcribed."
+  },
+  "documents": [
+    {
+      "filename": "953816.pdf",
+      "page_count": 4,
+      "table_pages": [2],
+      "tables": [
+        {
+          "id": "953816-p2-t1",
+          "page": 2,
+          "bbox_points": [42, 84, 455, 384],
+          "logical_rows": 13,
+          "logical_columns": 7,
+          "header_rows": 1,
+          "body_rows": 12,
+          "required_header_spans": [],
+          "ambiguities": ["Shaded body bands are not column dividers.", "Indented row labels are separate records when accompanied by a new line of values."]
+        }
+      ],
+      "negative_pages": [{"page": 1}, {"page": 3}, {"page": 4}]
+    }
+  ],
+  "expected_total_tables": 1
+}

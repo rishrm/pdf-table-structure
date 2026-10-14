@@ -45,7 +45,7 @@ Coordinates are PDF points, normally 72 per inch, in pdfplumber's page coordinat
 
 Schema version 1.1 adds scan diagnostics. For a tilted scan, `bbox` remains an enclosing rectangle in original page coordinates and `polygon` records its four original-page corners. `grid_transform` describes the applied straightening rotation; `x_boundaries` and `y_boundaries` refer to the straightened grid, as stated in `grid_coordinate_system`. Overlays use polygons for these cells so they follow the original tilt. Row and column indices are unchanged by the coordinate transform.
 
-Schema version 1.2 additionally records input/code SHA-256 hashes, dependency versions, effective settings, per-backend diagnostics, accepted/retained counts, and rejected candidate boxes/reasons. Every returned table is `review_status: unreviewed`; geometric acceptance does not establish that it matches the original table. Source headers/notes and logical wrapped rows remain ambiguous.
+Schema version 1.2 additionally records input/code SHA-256 hashes, dependency versions, effective settings, per-backend diagnostics, accepted/retained counts, and rejected candidate boxes/reasons. A repaired table includes `layout_repair` with its evidence source, original fragment indices, and inferred header/body counts. Every returned table is `review_status: unreviewed`; geometric acceptance does not establish that it matches the original table.
 
 ## Borderless tables and page selection
 
@@ -80,7 +80,11 @@ The closed-grid route needs enough horizontal **and** vertical boundaries to for
 
 `--layout-dpi` defaults to 200 and accepts 72-300, with the same 2200-pixel maximum dimension. It is separate from the closed-grid route's `--scan-dpi`. Higher rendering resolution can improve small-font layout but is not universally better. Missing/incompatible native dependencies produce actionable diagnostics while other routes remain available. `needs_fallback` means no acceptable grid was recovered, not that the page has no tables.
 
-Partially ruled scans can still produce split headers/body fragments, omitted columns, or extra rows from wrapped values. Detecting a plausible region is not recovering its complete logical structure. Caption/footnote separation and joining incompatible fragments are not implemented. Use overlays and a consistent annotation policy before reporting accuracy.
+After img2table detection, a conservative repair pass handles partially ruled tables with sufficient evidence. It uses the printed top/header/bottom rules to exclude captions and footnotes; header dividers or persistent body whitespace to recover missing columns; and repeated leading labels to keep wrapped numeric values in their logical rows. Nearby header/body fragments are rebuilt as one grid, and grouped headings crossing body dividers become spanning cells. Full-height header dividers keep multiline labels in a single header row. Component crops and processing work are bounded.
+
+For selectable-text PDFs, an additional geometry pass can use word positions to match header and body columns, recover the full ruled envelope, and group wrapped row labels using repeated occupancy in the other columns. It does not interpret or export the words. This also avoids mistaking shaded row bands for column dividers. A matching header pattern and printed bottom rule are mandatory.
+
+These repairs are conditional: missing rule evidence, sparse anchors, columns with little body ink, and conflicting body rulings preserve the earlier candidate. They do not solve arbitrary borderless layouts, ambiguous empty rows, semantic groupings, or every skewed scan. Caption/footnote separation follows printed boundaries rather than language meaning. Use overlays and a consistent annotation policy before reporting accuracy.
 
 ## Optional: your Ollama endpoint
 
@@ -136,7 +140,16 @@ python table_structure.py demo.pdf --strategy img2table --pages 4 --output runs/
 
 The bundled `examples/` contains structure JSON and overlays from synthetic tests. Tests cover spans, empty cells, crops, rotation, borderless pixels, OCR/content isolation, optional dependency failures, pixel evidence, rejected-candidate fallback, backend failure isolation, mixed pages, subset deduplication, prose rejection, bounded work and mocked model contracts. These checks do not establish a representative real-document accuracy rate or a live model benefit.
 
-The October 14 scan regression check passed 70 automatic tests and processed all 34 pages of four supplied PDFs. On the two image-only PDFs (18 pages), candidates occurred on all four table-bearing pages and none of the 14 negative pages. Six fragments represented five physical tables: split headers, missing columns, and caption/footnote leakage remain. The scans took 6.72 seconds including overlays, with a maximum single-process peak RSS of 416.56 MB on the tested Mac. No OCR or model calls were used. These documents informed the gates, so this is a small regression check rather than held-out accuracy or a low-power hardware benchmark. See [the recorded observations](docs/scan-validation-2026-10-14.txt).
+The initial October 14 check found six fragments across five scanned tables; see [the original observations](docs/scan-validation-2026-10-14.txt). The subsequent layout repair passes 80 automatic tests. On the same two image-only PDFs (18 pages), all five tables now match the annotated logical dimensions, required grouped-header spans, and approximate outer bounds. The 14 negative pages still have no candidates. A further selectable-text example now forms one 13-row, 7-column grid instead of two fragments. All 34 pages of the four supplied PDFs are rerun. No OCR or model calls are used. These documents informed implementation, so this is a small regression check rather than held-out accuracy or a low-power hardware benchmark. See [the before/after results](docs/layout-repair-validation-2026-10-14.txt).
+
+The repository contains geometry-only annotations, not the supplied PDFs. To compare saved runs (each PDF's results in a folder named after its numeric filename):
+
+```bash
+python evaluate_scans.py --runs /path/to/new-results --baseline /path/to/old-results --output /path/to/comparison.json
+python evaluate_scans.py --reference tests/fixtures/additional-layout-reference.json --runs /path/to/new-results --output /path/to/additional-comparison.json
+```
+
+The evaluator checks one candidate per reference, row/column counts, required header spans, and outer bounds within five points. It reports negative-page detections separately. It does not certify every cell edge or arbitrary semantic merges.
 
 `metrics.wall_seconds` includes detection and, if requested, rendering and model calls. Each page also records `detection_seconds`. `process_peak_rss_mb` measures the local Python process on macOS/Linux, including rendering; it does not measure the remote model's memory or power. Successful model responses can include server-reported token counts and durations in `model_review.metrics`. No electricity or API price estimate is inferred from these numbers.
 
@@ -154,7 +167,7 @@ Choose the cheapest method that meets your actual accuracy target. For clean bor
 - Every page is processed independently. Tables continued across pages are not joined.
 - Headers are not classified, and a missing border may look like a true merged cell. Inspect overlays rather than treating a valid grid as confirmed structure.
 
-The next stage for unresolved scans is to reconcile fragments, improve implicit column/logical-row inference, or compare a specialist structure model on verified table crops. Benchmark against annotated real tables and negative pages before optimizing or quantizing it.
+The next stage is to evaluate the repairs on unseen documents, extend support for ambiguous borderless/empty-row layouts, and compare a specialist structure model on verified unresolved crops. Benchmark against annotated real tables and negative pages before optimizing or quantizing it.
 
 ## Primary references
 

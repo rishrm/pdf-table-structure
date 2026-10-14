@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0",
+  "annotation_method": "Independent visual inspection of existing baseline page images and contact sheets; no detector, OCR, model, or network used.",
+  "coordinate_system": "PDF points, x right, y down; bbox [left, top, right, bottom]; page numbers 1-based; row/column indices 0-based",
+  "evaluation_policy": {
+    "count_rows": "Logical semantic rows, including table headers; wrapped text, parenthesized ranges, and stacked numeric lines within one data record remain in one row.",
+    "exclude_from_grid": ["table number", "caption/title above table", "footnotes below table", "running page header", "page number"],
+    "bbox_policy": "Approximate full-width grid region including horizontal table rules and header, ending after last data row; captions and footnotes excluded. Bboxes are visually estimated from original unannotated baseline renders and scaled to page points.",
+    "bbox_tolerance_points": 5,
+    "blank_header_spans": "Blank leading header cells have no visible internal boundary. Treat vertical spanning versus separate blank cells as ambiguous; evaluate substantive grouped header spans separately.",
+    "content_policy": "No paper contents are transcribed. Cell text and scientific or medical conclusions are outside this reference."
+  },
+  "documents": [
+    {
+      "filename": "951276.pdf",
+      "page_count": 14,
+      "table_pages": [7, 9, 10],
+      "tables": [
+        {
+          "id": "951276-p7-t1",
+          "page": 7,
+          "page_size_points": [586.56, 307.2],
+          "render_size_pixels": [978, 513],
+          "bbox_points": [14.4, 63.5, 528.0, 151.0],
+          "bbox_pixels": [24, 106, 880, 252],
+          "logical_rows": 6,
+          "logical_columns": 8,
+          "header_rows": 2,
+          "body_rows": 4,
+          "column_roles": ["row label", "count", "group A subcolumn 1", "group A subcolumn 2", "group B subcolumn 1", "group B subcolumn 2", "group C subcolumn 1", "group C subcolumn 2"],
+          "required_header_spans": [
+            {"row": 0, "column": 2, "rowspan": 1, "colspan": 2},
+            {"row": 0, "column": 4, "rowspan": 1, "colspan": 2},
+            {"row": 0, "column": 6, "rowspan": 1, "colspan": 2}
+          ],
+          "ambiguities": ["Leading blank label column may span the two header rows.", "Count header is positioned in the lower header row with blank space above; a vertical span is an acceptable alternative representation.", "Page is natively landscape with the table upright and a vertical running header at right; do not rotate the table grid by 90 degrees."]
+        },
+        {
+          "id": "951276-p9-t1",
+          "page": 9,
+          "page_size_points": [366.0, 574.32],
+          "render_size_pixels": [610, 958],
+          "bbox_points": [22.2, 83.9, 345.0, 151.0],
+          "bbox_pixels": [37, 140, 575, 252],
+          "logical_rows": 5,
+          "logical_columns": 3,
+          "header_rows": 1,
+          "body_rows": 4,
+          "required_header_spans": [],
+          "ambiguities": ["The long title wraps onto two lines above the grid and must not add rows.", "There is no obvious bottom grid rule; end bbox after last body row, before the explanatory prose."]
+        },
+        {
+          "id": "951276-p10-t1",
+          "page": 10,
+          "page_size_points": [351.84, 579.12],
+          "render_size_pixels": [587, 966],
+          "bbox_points": [16.8, 86.9, 336.3, 174.0],
+          "bbox_pixels": [28, 145, 561, 290],
+          "logical_rows": 6,
+          "logical_columns": 5,
+          "header_rows": 2,
+          "body_rows": 4,
+          "column_roles": ["row label", "group A count", "group A measurement", "group B count", "group B measurement"],
+          "required_header_spans": [
+            {"row": 0, "column": 1, "rowspan": 1, "colspan": 2},
+            {"row": 0, "column": 3, "rowspan": 1, "colspan": 2}
+          ],
+          "ambiguities": ["Leading blank label header may span both header rows.", "The title above the grid wraps and must not be included as rows.", "No strong bottom rule; footnotes begin below the final body record."]
+        }
+      ],
+      "negative_pages": [
+        {"page": 1, "type": "library/transmittal cover", "note": "Metadata blocks and barcode do not constitute a paper table."},
+        {"page": 2, "type": "title/abstract prose"},
+        {"page": 3, "type": "prose"},
+        {"page": 4, "type": "prose plus labeled illustration", "note": "Numbered anatomical drawing is a figure, not a table."},
+        {"page": 5, "type": "prose"},
+        {"page": 6, "type": "prose"},
+        {"page": 8, "type": "stacked image figure", "note": "Four vertically stacked labeled image panels are not table rows."},
+        {"page": 11, "type": "prose"},
+        {"page": 12, "type": "prose/references"},
+        {"page": 13, "type": "references"},
+        {"page": 14, "type": "references"}
+      ],
+      "mixed_page_negative_regions": [
+        {"page": 9, "bbox_points": [13.8, 293.7, 351.0, 493.5], "type": "2 by 2 image-panel figure", "note": "Panel arrangement is not a logical table grid."}
+      ]
+    },
+    {
+      "filename": "951436.pdf",
+      "page_count": 4,
+      "table_pages": [3],
+      "tables": [
+        {
+          "id": "951436-p3-t1",
+          "page": 3,
+          "page_size_points": [494.88, 697.2],
+          "render_size_pixels": [825, 1163],
+          "bbox_points": [14.4, 73.7, 479.3, 200.8],
+          "bbox_pixels": [24, 123, 799, 335],
+          "logical_rows": 5,
+          "logical_columns": 10,
+          "header_rows": 1,
+          "body_rows": 4,
+          "required_header_spans": [],
+          "ambiguities": ["Multiline header labels occupy one logical header row.", "Parenthesized ranges below numeric values are continuation lines in the same body cell, not separate rows.", "Only the header has vertical rules; body rows are defined by aligned records and spacing."]
+        },
+        {
+          "id": "951436-p3-t2",
+          "page": 3,
+          "page_size_points": [494.88, 697.2],
+          "render_size_pixels": [825, 1163],
+          "bbox_points": [14.4, 266.8, 234.5, 333.3],
+          "bbox_pixels": [24, 445, 391, 556],
+          "logical_rows": 5,
+          "logical_columns": 3,
+          "header_rows": 1,
+          "body_rows": 4,
+          "required_header_spans": [],
+          "ambiguities": ["The table title and caption above the grid wrap over two lines; exclude both from row count.", "Values and parenthetical counts are part of the same cell.", "Exclude the single-line footnote beneath the bottom rule.", "Adjacent right-column prose is outside this table."]
+        }
+      ],
+      "negative_pages": [
+        {"page": 1, "type": "library/transmittal cover", "note": "Metadata blocks and barcode do not constitute a paper table."},
+        {"page": 2, "type": "title/abstract/two-column prose"},
+        {"page": 4, "type": "two-column prose/references"}
+      ]
+    }
+  ],
+  "expected_total_tables": 5,
+  "additional_tables_found_beyond_known_candidates": false
+}

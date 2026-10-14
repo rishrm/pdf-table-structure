@@ -213,6 +213,30 @@ def _pixel_evidence(group, masks, sx, sy, np, cv2):
     return result
 
 
+def _layout_components(area, masks, bounds, sx, sy, cv2):
+    """Read glyph-shaped components in a bounded crop, without recognizing them."""
+    ink = masks["nonrule"]
+    height, width = ink.shape
+    x0 = max(0, math.floor((area[0] - bounds[0]) * sx))
+    y0 = max(0, math.floor((area[1] - bounds[1]) * sy))
+    x1 = min(width, math.ceil((area[2] - bounds[0]) * sx) + 1)
+    y1 = min(height, math.ceil((area[3] - bounds[1]) * sy) + 1)
+    pixels = max(0, x1 - x0) * max(0, y1 - y0)
+    if not pixels or pixels > MAX_EVIDENCE_CROP_PIXELS or pixels > masks["layout_budget"]:
+        return []
+    masks["layout_budget"] -= pixels
+    count, _labels, stats, _centroids = cv2.connectedComponentsWithStats(
+        ink[y0:y1, x0:x1], connectivity=8, ltype=cv2.CV_32S)
+    if count > 20_001:
+        return []
+    components = []
+    for x, y, w, h, area_pixels in stats[1:]:
+        if 1.5 <= h / sy <= 18 and .3 <= w / sx <= 70 and area_pixels / (sx * sy) >= .5:
+            components.append((float(x + x0) / sx + bounds[0], float(y + y0) / sy + bounds[1],
+                float(x + x0 + w) / sx + bounds[0], float(y + y0 + h) / sy + bounds[1]))
+    return components
+
+
 def page_grids(region, *, dpi=144, tolerance=2.0):
     """Return ``(cell_groups, transform, diagnostics)`` in pdfplumber page points.
 
@@ -328,7 +352,35 @@ def page_grids(region, *, dpi=144, tolerance=2.0):
             masks_error = None
         except Exception as exc:
             masks, masks_error = None, type(exc).__name__
-        for group, grid, source_index in zip(groups, grids, source_indices):
+        repair_notes = [{"status": "unchanged", "source_group_indices": [i]}
+                        for i in range(len(groups))]
+        try:
+            rules, truncated = _horizontal_rules(extractor, bounds, sx, sy)
+            diagnostics["horizontal_rules"] = rules
+            diagnostics["horizontal_rules_truncated"] = truncated
+            if truncated:
+                diagnostics["warnings"].append("img2table_horizontal_rule_hints_truncated")
+            if masks is not None:
+                from layout_repair import repair_groups
+                vertical = [(float(v.x1) / sx + bounds[0], float(v.y1) / sy + bounds[1],
+                             float(v.x2) / sx + bounds[0], float(v.y2) / sy + bounds[1])
+                            for v in getattr(extractor, "vertical_lines", [])[:MAX_RULE_HINTS]]
+                masks["layout_budget"] = MAX_EVIDENCE_TOTAL_PIXELS
+                repaired, notes = repair_groups(grids, rules, vertical,
+                    lambda area: _layout_components(area, masks, bounds, sx, sy, cv2))
+                repaired_pixels = [[((b[0] - bounds[0]) * sx, (b[1] - bounds[1]) * sy,
+                            (b[2] - bounds[0]) * sx, (b[3] - bounds[1]) * sy) for b in grid]
+                          for grid in repaired]
+                grids, groups, repair_notes = repaired, repaired_pixels, notes
+                diagnostics["layout_repair"] = {"status": "completed",
+                    "repaired_tables": sum(n["status"] == "repaired" for n in notes),
+                    "component_crop_pixel_budget": MAX_EVIDENCE_TOTAL_PIXELS,
+                    "component_crop_pixels_used": MAX_EVIDENCE_TOTAL_PIXELS - masks["layout_budget"]}
+        except Exception as exc:
+            diagnostics["warnings"].append(f"img2table_layout_repair_failed:{type(exc).__name__}")
+        diagnostics.update(returned_tables=len(grids), unique_cells=sum(len(grid) for grid in grids))
+        for group, grid, repair in zip(groups, grids, repair_notes):
+            source_index = source_indices[repair["source_group_indices"][0]]
             # img2table 2.0.0 has no borderless field. Preserve a bool if a
             # compatible Table supplies one; None means the source is unknown.
             borderless = getattr(tables[source_index], "borderless", None)
@@ -338,6 +390,9 @@ def page_grids(region, *, dpi=144, tolerance=2.0):
                          max(box[2] for box in grid), max(box[3] for box in grid)],
                 "unique_cells": len(grid),
                 "borderless": borderless if isinstance(borderless, bool) else None}
+            if repair["status"] == "repaired":
+                item_metadata["layout_repair"] = {**repair,
+                    "source_candidate_indices": [source_indices[i] for i in repair["source_group_indices"]]}
             try:
                 item_metadata["pixel_evidence"] = _pixel_evidence(group, masks, sx, sy, np, cv2) \
                     if masks is not None else {"status": "unavailable", "reason": masks_error}
@@ -345,16 +400,6 @@ def page_grids(region, *, dpi=144, tolerance=2.0):
                 item_metadata["pixel_evidence"] = {"status": "unavailable",
                                                    "reason": type(exc).__name__}
             diagnostics["returned_group_metadata"].append(item_metadata)
-        try:
-            rules, truncated = _horizontal_rules(extractor, bounds, sx, sy)
-            diagnostics["horizontal_rules"] = rules
-            diagnostics["horizontal_rules_truncated"] = truncated
-            if truncated:
-                diagnostics["warnings"].append("img2table_horizontal_rule_hints_truncated")
-        except Exception as exc:
-            # Optional hints must not discard otherwise usable cell geometry.
-            diagnostics["warnings"].append(
-                f"img2table_rule_diagnostics_failed:{type(exc).__name__}")
         return result(grids, transform)
     except Exception as exc:
         diagnostics["status"] = "failed"
