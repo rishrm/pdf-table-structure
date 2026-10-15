@@ -1,4 +1,4 @@
-# Table Structure Lab
+# Table Structure
 
 A small CPU-based starting point for recognizing table structure in PDFs: table regions, rows, columns, cell rectangles, and merged cells. It exports no cell text into JSON. It combines vector-bordered tables, closed-grid pixel detection, and an experimental OCR-free `img2table` layout fallback for partially ruled and borderless images.
 
