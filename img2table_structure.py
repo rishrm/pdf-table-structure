@@ -552,6 +552,25 @@ def page_grids(region, *, dpi=144, tolerance=2.0):
                 masks["layout_budget"] = MAX_EVIDENCE_TOTAL_PIXELS
                 repaired, notes = repair_groups(grids, rules, vertical,
                     lambda area: _layout_components(area, masks, bounds, sx, sy, cv2))
+                if not getattr(region, "chars", []):
+                    try:
+                        from scan_headers import repair_headers
+                        with_headers, header_notes = repair_headers(repaired, rules,
+                            lambda area: _layout_components(area, masks, bounds, sx, sy, cv2))
+                        if len(with_headers) != len(repaired) or len(header_notes) != len(notes):
+                            raise ValueError("unaligned_header_repair")
+                        combined_notes = [{**old, **header,
+                            "source_group_indices": old["source_group_indices"]}
+                            if header.get("status") == "repaired" else old
+                            for old, header in zip(notes, header_notes)]
+                        repaired, notes = with_headers, combined_notes
+                        diagnostics["scan_header_repair"] = {"status": "completed",
+                            "repaired_tables": sum(h.get("status") == "repaired" for h in header_notes),
+                            "attempts": header_notes}
+                    except MemoryError:
+                        raise
+                    except Exception as exc:
+                        diagnostics["warnings"].append(f"scan_header_repair_failed:{type(exc).__name__}")
                 repaired_pixels = [[((b[0] - bounds[0]) * sx, (b[1] - bounds[1]) * sy,
                             (b[2] - bounds[0]) * sx, (b[3] - bounds[1]) * sy) for b in grid]
                           for grid in repaired]

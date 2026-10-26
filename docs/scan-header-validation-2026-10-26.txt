@@ -1,0 +1,28 @@
+Focused scan-header validation - 2026-10-26
+Baseline implementation: 39fce7d249a1abe4b1e85971470ef2c1c0d563f6
+Current detector source SHA-256: b81aaa54deb20d5f8a3e954a8b8a743742e5bd3457ba1a3077c6ddbebd622aa3
+145 automated tests passed. Nine complete PDFs / 127 pages rerun with auto strategy and JSON-only output.
+
+Only two returned table geometries changed:
+  965873 page 3 Table II: 4x2 -> 5x2, with a full-width two-column summary/header row.
+  965873 page 3 Table III: 6x3 -> 7x3, with a full-width three-column summary/header row.
+  Table III body grouping remains ambiguous in the reference; its exact row count remains unscored.
+Every other returned table geometry is identical to the previous run. The source PDFs and prior reports were not modified.
+
+Same frozen benchmark definitions, before -> after:
+  Region matches: 14/17 -> 14/17. Precision 93.3%; recall 82.4%; one unmatched candidate remains.
+  Exact row/column agreement: 10/14 -> 11/14 (71.4% -> 78.6%).
+  Strict dimension/span/outer-bound checklist: 9/14 -> 10/14 (64.3% -> 71.4%).
+  Annotated required spans: 10/12 -> 12/12. This does not certify every possible merged cell.
+
+Safeguards:
+  A compatible printed top/bottom bracket, substantial top gap, isolated centered line and repeated body occupancy are required.
+  Captions above the top rule, separate labels, multiline headers and existing headers are not prepended.
+  Unexplained ink below or beside the old grid blocks expansion; an extra row or field cannot be absorbed.
+  Original source indices and body row/column spans are preserved. Failures retain the old candidate and omit exception contents.
+  Pixel masks and component budgets are reused. No new renderer, OCR, external model or API call is introduced.
+
+Next separate failure: 965848 page 3 already has its header; two body records are merged and a slanted bottom rule is missed. A prepend-header fix must not be applied there.
+The existing prose false positive on 965873 page 3 is unchanged and remains visible in the full-page overlay.
+
+Scope: these are development/regression PDFs. Outputs remain unreviewed. The single rerun is not a new timing or energy benchmark.

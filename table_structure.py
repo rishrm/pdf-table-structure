@@ -603,7 +603,7 @@ def run(args):
             input_digest.update(chunk)
     report["input_sha256"] = input_digest.hexdigest()
     code = hashlib.sha256()
-    for name in ("table_structure.py", "raster_structure.py", "img2table_structure.py", "layout_repair.py", "figure_quality.py", "native_structure.py", "scan_recovery.py", "ollama_refine.py"):
+    for name in ("table_structure.py", "raster_structure.py", "img2table_structure.py", "layout_repair.py", "figure_quality.py", "native_structure.py", "scan_recovery.py", "scan_headers.py", "ollama_refine.py"):
         code.update((Path(__file__).parent / name).read_bytes())
     report["code_sha256"] = code.hexdigest()
     report["effective_settings"] = {"strategy": args.strategy, "pages": args.pages,
