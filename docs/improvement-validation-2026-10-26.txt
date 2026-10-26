@@ -1,0 +1,33 @@
+Parser improvement validation - 2026-10-26
+Baseline commit: e4c691790d90284aa6b2aab8a25547e60dedc9c3
+Current detector source SHA-256: 3968b349d600d72f242ceb125d088146d786d6a4f15686d67c8a8b680ec7e345
+128 automated tests passed.
+Scoring references and matching definitions are unchanged from the frozen four-PDF benchmark.
+Nine complete PDFs / 127 pages rerun, including the four benchmark PDFs / 72 pages and five earlier regression PDFs / 55 pages.
+
+Four-PDF benchmark, before -> after:
+  Table-region matches:9/17 ->14/17; precision45.0% ->93.3%; recall52.9% ->82.4%; F1 48.6% ->87.5%.
+  Unmatched outputs:11 ->1. Missed table instances:8 ->3.
+  Exact row/column counts:3/14 ->10/14 eligible references (21.4% ->71.4%).
+  Strict dimension/span/outer-bound checklist:1/14 ->9/14 (7.1% ->64.3%).
+  Annotated required spans recovered:1/12 ->10/12. This is not full cell-level F1.
+  Clear negative pages with no detections:50/53 ->53/53. One false candidate remains on a page that also contains real tables.
+
+Ratings are measured fractions multiplied by 10:
+  Row/column count accuracy:2.1 ->7.1 /10; strict reference checklist:0.7 ->6.4 /10.
+  Region precision:4.5 ->9.3 /10; region recall:5.3 ->8.2 /10; region F1:4.9 ->8.8 /10.
+  Required-span recovery:0.8 ->8.3 /10; negative-page control:9.4 ->10.0 /10.
+
+Runtime uses three serial fresh-process JSON-only trials per PDF, rotated order, warm cache, and the same auto/DPI settings as baseline.
+  Median complete 72-page pass:35.850016s ->33.551877s (6.4% lower observed walltime).
+  Maximum single-process peak RSS:447.28MiB ->479.17MiB (7.1% higher).
+  All 12 timed invocations succeeded and reproduced their preview geometry exactly. No electricity or low-power-device benchmark performed.
+
+Earlier regression:all 8 annotated tables stillpass; all 4 prior vector cell grids are identical. No OCR/model/API calls used. No cell text exported.
+
+Remaining cases:
+  Missed965848 page 11 continuation matrix;965873 page 3 left table;965986 page 4 graphic-bearing table.
+  Wrong counts remain on965848 page 3 and965873 page 3 table II; summaryheader spans remain missing in965873.
+  965848 page 10 countmatches but outerrightbound is incomplete. One prosefragment is still accepted on965873 page 3.
+
+Limits:the four benchmark PDFs now informed these changes and are development/regression data, not held-out validation. Five ambiguousregions and three ambiguousrowcounts remain excluded by the frozen policy. Every output remains marked unreviewed. No full cell-box accuracy, PDF rewriting, accessibility-tag quality, or universal out-of-10 quality grade is claimed.

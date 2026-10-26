@@ -267,10 +267,12 @@ def same_table(first, second):
     return (union > 0 and intersection / union >= 0.65) or contained_grid(second, first)
 
 
-def image_evidence(table, metadata, horizontal_rules):
+def image_evidence(table, metadata, horizontal_rules, figure_context=None):
     """Reject graphic-dominated or weak tiny layout candidates; no OCR used."""
-    from figure_quality import figure_evidence_reasons
-    pixel = metadata.get("pixel_evidence", {})
+    from figure_quality import context_evidence, figure_evidence_reasons
+    pixel = dict(metadata.get("pixel_evidence", {}))
+    if figure_context is not None:
+        pixel["diagram_context"] = context_evidence(table["bbox"], figure_context)
     b = table["bbox"]
     width = b[2] - b[0]
     rule_support = any(
@@ -324,6 +326,8 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                 reasons.append("candidate_outside_selected_region")
             if not reasons:
                 reasons.extend(check_grid(candidate))
+            if method == "native" and not backend_details:
+                reasons.append("native_envelope_unverified")
             if method == "text" and not reasons:
                 if boxes is None:
                     boxes = word_boxes_only(region)
@@ -333,7 +337,7 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                 reasons.extend(check_grid(candidate))
                 if candidate["row_count"] < 2 or candidate["column_count"] < 2:
                     reasons.append("single_row_or_column_after_text_normalization")
-            if method in ("text", "img2table") and region.chars and not reasons:
+            if method in ("text", "img2table", "native") and region.chars and not reasons:
                 if boxes is None:
                     boxes = word_boxes_only(region)
                 evidence_reasons, evidence = text_evidence(candidate, boxes, region.bbox)
@@ -341,27 +345,45 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                 reasons.extend(evidence_reasons)
                 if method == "img2table":
                     reasons.extend(mixed_image_evidence(candidate, boxes, region.images))
-            if method == "img2table" and backend_details and not reasons:
+            if method in ("img2table", "native", "scan_recovery") and backend_details and not reasons:
                 group_metadata = backend_details.get("returned_group_metadata", [])
                 metadata = group_metadata[raw_index] if raw_index < len(group_metadata) else {}
+                if method == "native" and not metadata.get("complete_envelope"):
+                    reasons.append("native_envelope_unverified")
                 if metadata.get("layout_repair", {}).get("status") == "repaired":
                     candidate["layout_repair"] = metadata["layout_repair"]
                     candidate["warnings"].append("rule_anchored_layout_repair_requires_review")
-                image_reasons, evidence = image_evidence(candidate, metadata,
-                    backend_details.get("horizontal_rules", []))
-                candidate.setdefault("evidence", {}).update(evidence)
-                reasons.extend(image_reasons)
+                if method == "native":
+                    candidate["native_evidence"] = metadata
+                else:
+                    image_reasons, evidence = image_evidence(candidate, metadata,
+                        backend_details.get("horizontal_rules", []), backend_details.get("figure_context"))
+                    candidate.setdefault("evidence", {}).update(evidence)
+                    reasons.extend(image_reasons)
             if reasons:
                 attempt["rejected"].append({"bbox": candidate["bbox"],
                                             "reasons": sorted(set(reasons))})
                 continue
-            if method in ("raster", "img2table"):
+            if method in ("raster", "img2table", "native", "scan_recovery"):
                 from raster_structure import map_to_original
                 if transform:
                     map_to_original(candidate, transform)
                 candidate["warnings"].append(f"experimental_{method}_detection_requires_review")
             expansions = [old for old in tables if contained_grid(old, candidate) and
                           not contained_grid(candidate, old)]
+            if method == "native" and candidate.get("native_evidence", {}).get("complete_envelope"):
+                # A verified native envelope can include unruled body rows that
+                # were absent from a small closed vector fragment. Its new cell
+                # partition need not preserve the fragment's accidental grid.
+                for old in tables:
+                    a, b = old["bbox"], candidate["bbox"]
+                    old_area = (a[2] - a[0]) * (a[3] - a[1])
+                    new_area = (b[2] - b[0]) * (b[3] - b[1])
+                    overlap = max(0, min(a[2], b[2]) - max(a[0], b[0])) * \
+                              max(0, min(a[3], b[3]) - max(a[1], b[1]))
+                    if old["method"] == "lines" and overlap >= .95 * old_area and \
+                            new_area >= 1.2 * old_area and old not in expansions:
+                        expansions.append(old)
             if any(same_table(accepted, candidate) for accepted in tables if accepted not in expansions):
                 attempt["rejected"].append({"bbox": candidate["bbox"],
                                             "reasons": ["duplicate_of_preferred_candidate"]})
@@ -387,6 +409,21 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                        "accepted": 0, "rejected": [], "error_type": type(exc).__name__}
             attempts.append(details)
             warnings.append(f"{method}_backend_failed:{type(exc).__name__}")
+
+    def native():
+        try:
+            from native_structure import page_grids
+            groups, details = page_grids(region)
+            diagnostics["native_detection"] = details
+            warnings.extend(details.get("warnings", []))
+            ingest(groups, "native", backend_details=details)
+        except MemoryError:
+            raise
+        except Exception as exc:
+            warnings.append(f"native_backend_failed:{type(exc).__name__}")
+            diagnostics["native_detection"] = {"status": "failed", "error_type": type(exc).__name__}
+            attempts.append({"method": "native", "status": "failed", "raw_candidates": 0,
+                             "accepted": 0, "rejected": [], "error_type": type(exc).__name__})
 
     def image_backend(method, dpi):
         nonlocal image_attempted, boxes
@@ -424,6 +461,28 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
             diagnostics[f"{method}_detection"] = details
             warnings.extend(details.get("warnings", []))
             ingest(groups, method, transform, details)
+            if method == "img2table" and details.get("figure_context"):
+                # Reuse the page's image context to review earlier raster grids.
+                # Diagram boxes can form closed cells even though they are not
+                # a table. No extra render is needed for this second check.
+                from figure_quality import context_evidence, figure_evidence_reasons
+                removed = []
+                for table in list(tables):
+                    if table["method"] != "raster":
+                        continue
+                    evidence = context_evidence(table["bbox"], details["figure_context"])
+                    reasons = figure_evidence_reasons({"diagram_context": evidence})
+                    if reasons:
+                        tables.remove(table)
+                        rejected = {"bbox": table["bbox"], "reasons": reasons,
+                                    "stage": "page_figure_context"}
+                        removed.append(rejected)
+                        for attempt in attempts:
+                            if attempt["method"] == "raster":
+                                attempt["accepted"] = max(0, attempt["accepted"] - 1)
+                                attempt["rejected"].append(rejected)
+                diagnostics["raster_context_review"] = {"rejected": removed,
+                    "retained": sum(t["method"] == "raster" for t in tables)}
         except MemoryError:
             raise
         except Exception as exc:
@@ -435,6 +494,8 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
 
     if strategy in ("auto", "lines", "text"):
         vector("text" if strategy == "text" else "lines")
+    if strategy == "native" or (strategy == "auto" and region.chars):
+        native()
     if strategy == "raster" or (strategy == "auto" and region.images):
         image_backend("raster", scan_dpi)
     # Accepted candidates, not raw fragments, determine fallback. Image-containing
@@ -442,10 +503,26 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
     # another scanned/partially ruled table elsewhere on the page.
     if strategy == "img2table" or (strategy == "auto" and (not tables or region.images)):
         image_backend("img2table", layout_dpi)
+    if strategy == "auto" and not tables and region.images and not region.chars:
+        rules = diagnostics.get("img2table_detection", {}).get("horizontal_rules", [])
+        if rules:
+            try:
+                from scan_recovery import recover_ruled_groups
+                groups, details = recover_ruled_groups(region, rules, dpi=layout_dpi)
+                context = diagnostics.get("img2table_detection", {}).get("figure_context")
+                if context is not None:
+                    details["figure_context"] = context
+                diagnostics["scan_recovery"] = details
+                warnings.extend(details.get("warnings", []))
+                ingest(groups, "scan_recovery", backend_details=details)
+            except MemoryError:
+                raise
+            except Exception as exc:
+                warnings.append(f"scan_recovery_failed:{type(exc).__name__}")
     if strategy == "auto" and not tables and region.chars:
         vector("text")
     if strategy == "auto" and tables and not region.images and \
-            all(t["method"] == "lines" for t in tables):
+            all(t["method"] in ("lines", "native") for t in tables):
         warnings.append("additional_borderless_regions_not_searched")
     if region.images and not image_attempted:
         warnings.append("use_auto_or_img2table_for_image_content")
@@ -513,7 +590,7 @@ def run(args):
     if output_dir.exists() and any(output_dir.iterdir()):
         raise ValueError("Output folder must be empty; choose a new folder for each run")
     output_dir.mkdir(parents=True, exist_ok=True)
-    report = {"schema_version": "1.2", "coordinate_system":
+    report = {"schema_version": "1.3", "coordinate_system":
               "PDF points; x right, y down; bbox=[x0, top, x1, bottom] in pdfplumber page coordinates",
               "indexing": "page is 1-based; row and column are 0-based",
               "cell_text_in_json": False, "overlays_include_original_page": not args.no_overlays,
@@ -526,7 +603,7 @@ def run(args):
             input_digest.update(chunk)
     report["input_sha256"] = input_digest.hexdigest()
     code = hashlib.sha256()
-    for name in ("table_structure.py", "raster_structure.py", "img2table_structure.py", "layout_repair.py", "figure_quality.py", "ollama_refine.py"):
+    for name in ("table_structure.py", "raster_structure.py", "img2table_structure.py", "layout_repair.py", "figure_quality.py", "native_structure.py", "scan_recovery.py", "ollama_refine.py"):
         code.update((Path(__file__).parent / name).read_bytes())
     report["code_sha256"] = code.hexdigest()
     report["effective_settings"] = {"strategy": args.strategy, "pages": args.pages,
@@ -539,7 +616,8 @@ def run(args):
         "maximum_candidate_cells": 4096, "maximum_grid_slots": 65536,
         "minimum_unruled_layout_rows": 4, "duplicate_iou": 0.65,
         "graphic_large_ink_limit": 0.55, "graphic_character_ink_limit": 0.35,
-        "rule_anchored_layout_repair": True, "word_x_tolerance_ratio": 0.15}
+        "rule_anchored_layout_repair": True, "word_x_tolerance_ratio": 0.15,
+        "native_envelope_detection": True, "scan_rule_recovery": True}
     report["dependency_versions"] = {}
     for name in ("pdfplumber", "pdfminer.six", "Pillow", "pypdfium2", "img2table",
                  "opencv-contrib-python", "numpy"):
@@ -611,7 +689,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("pdf", help="Input PDF (never modified)")
     parser.add_argument("--output", default="runs/baseline", help="New, empty output folder")
-    parser.add_argument("--strategy", choices=["auto", "lines", "text", "raster", "img2table"], default="auto")
+    parser.add_argument("--strategy", choices=["auto", "lines", "native", "text", "raster", "img2table"], default="auto")
     parser.add_argument("--pages", help="1-based selection, e.g. 1,3-5")
     parser.add_argument("--bbox", type=float, nargs=4, metavar=("X0", "TOP", "X1", "BOTTOM"),
                         help="Restrict detection to a known region, in PDF points")

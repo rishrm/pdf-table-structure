@@ -12,7 +12,7 @@ import math
 import time
 
 from PIL import Image
-from figure_quality import FIGURE_EVIDENCE_POLICY
+from figure_quality import FIGURE_EVIDENCE_POLICY, context_evidence
 
 SUPPORTED_VERSION = "2.0.0"
 MAX_RENDER_DIMENSION = 2200
@@ -22,6 +22,9 @@ MAX_RULE_HINTS = 20_000
 MAX_EVIDENCE_CROP_PIXELS = 1_000_000
 MAX_EVIDENCE_TOTAL_PIXELS = 4_000_000
 MAX_EVIDENCE_COMPONENTS = 50_000
+MAX_CONTEXT_FRAMES = 128
+MAX_CONTEXT_SHAPES = 128
+MAX_CONNECTOR_SAMPLE_PIXELS = 2_000_000
 INSTALL_ACTION = 'Install optional backend with: python -m pip install "img2table==2.0.0"'
 EXTRACT_FLAGS = {"implicit_rows": True, "implicit_columns": True,
                  "borderless_tables": True}
@@ -114,6 +117,145 @@ def _horizontal_rules(extractor, bounds, sx, sy):
         len(lines) > MAX_RULE_HINTS
 
 
+def _diagram_context(foreground, sx, sy, np, cv2):
+    """Find connected box networks and distributed panel shapes once per page.
+
+    Closed rectangular holes distinguish box interiors from glyphs. A flow
+    network needs thin ink bridges through whitespace between box interiors,
+    rather than ordinary adjacent/shared table borders. Coordinates are points
+    relative to the rendered image; no OCR or document semantics are consulted.
+    """
+    contours, hierarchy = cv2.findContours(foreground, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    if hierarchy is None:
+        return {"status": "ok", "connected_box_groups": [], "large_curved_shapes": []}
+    if len(contours) > MAX_EVIDENCE_COMPONENTS:
+        return {"status": "partial", "reason": "context_contour_limit"}
+    records, frames, heights = [], [], []
+    for index, contour in enumerate(contours):
+        x, y, w, h = cv2.boundingRect(contour)
+        contour_area = abs(float(cv2.contourArea(contour)))
+        fill = contour_area / max(1, w * h)
+        depth, ancestor = 0, index
+        while hierarchy[0, ancestor, 3] >= 0:
+            depth += 1
+            ancestor = int(hierarchy[0, ancestor, 3])
+            if depth > 64:
+                return {"status": "partial", "reason": "context_nesting_limit"}
+        box = [x / sx, y / sy, (x + w) / sx, (y + h) / sy]
+        records.append((index, ancestor, depth, box, fill))
+        if depth % 2 == 0 and .25 <= w / sx <= 18 and .5 <= h / sy <= 20 and \
+                .15 <= contour_area / (sx * sy) <= 150:
+            heights.append(h / sy)
+        if depth % 2 == 1 and w / sx >= 25 and h / sy >= 10 and \
+                contour_area / (sx * sy) >= 250 and fill > .88:
+            frames.append({"bbox": box, "root": ancestor})
+    if len(frames) > MAX_CONTEXT_FRAMES:
+        return {"status": "partial", "reason": "context_frame_limit"}
+    reference_height = float(np.median(heights)) if heights else 0
+    root_counts = {}
+    for frame in frames:
+        root_counts[frame["root"]] = root_counts.get(frame["root"], 0) + 1
+    curved = []
+    for index, root, depth, box, fill in records:
+        w, h = box[2] - box[0], box[3] - box[1]
+        if depth % 2 == 0 and .3 < fill < .88 and .45 < w / h < 2.2 and \
+                w > max(18, 3 * reference_height) and h > max(18, 5 * reference_height) and \
+                not (index == root and root_counts.get(root, 0) >= 2):
+            curved.append(box)
+    if len(curved) > MAX_CONTEXT_SHAPES:
+        return {"status": "partial", "reason": "context_shape_limit"}
+    # Nested/double contours of the same shape must not multiply the evidence.
+    unique_shapes = []
+    for box in sorted(curved, key=lambda b: -(b[2] - b[0]) * (b[3] - b[1])):
+        duplicate = False
+        for old in unique_shapes:
+            intersection = max(0, min(box[2], old[2]) - max(box[0], old[0])) * \
+                           max(0, min(box[3], old[3]) - max(box[1], old[1]))
+            union = (box[2] - box[0]) * (box[3] - box[1]) + \
+                    (old[2] - old[0]) * (old[3] - old[1]) - intersection
+            if intersection / max(1e-9, union) > .8:
+                duplicate = True
+                break
+        if not duplicate:
+            unique_shapes.append(box)
+    parents = list(range(len(frames)))
+
+    def find(index):
+        while parents[index] != index:
+            parents[index] = parents[parents[index]]
+            index = parents[index]
+        return index
+
+    def join(a, b):
+        parents[find(a)] = find(b)
+
+    edges, adjacent, remaining = [], [], MAX_CONNECTOR_SAMPLE_PIXELS
+    for i, first in enumerate(frames):
+        a = first["bbox"]
+        for j in range(i + 1, len(frames)):
+            b = frames[j]["bbox"]
+            if first["root"] == frames[j]["root"]:
+                join(i, j)
+            xlo, xhi = max(a[0], b[0]), min(a[2], b[2])
+            ylo, yhi = max(a[1], b[1]), min(a[3], b[3])
+            gap_y = max(a[1], b[1]) - min(a[3], b[3])
+            gap_x = max(a[0], b[0]) - min(a[2], b[2])
+            if (abs(gap_y) < 3 and xhi - xlo > .5 * min(a[2] - a[0], b[2] - b[0])) or \
+                    (abs(gap_x) < 3 and yhi - ylo > .5 * min(a[3] - a[1], b[3] - b[1])):
+                adjacent.append((i, j))
+            bridge = False
+            if 4 <= gap_y <= 80 and xhi > xlo:
+                margin = max(2, .1 * min(a[2] - a[0], b[2] - b[0]))
+                left = int(max(a[0] + margin, b[0] + margin) * sx)
+                right = int(min(a[2] - margin, b[2] - margin) * sx)
+                top = int((min(a[3], b[3]) + 2) * sy)
+                bottom = int((max(a[1], b[1]) - 2) * sy)
+                if right > left and bottom > top:
+                    remaining -= (right - left) * (bottom - top)
+                    if remaining < 0:
+                        return {"status": "partial", "reason": "connector_sample_budget"}
+                    strip = foreground[top:bottom, left:right]
+                    bridge = bool(np.max(np.count_nonzero(strip, axis=0)) / (bottom - top) > .8)
+            if 4 <= gap_x <= 80 and yhi > ylo:
+                margin = max(2, .1 * min(a[3] - a[1], b[3] - b[1]))
+                top = int(max(a[1] + margin, b[1] + margin) * sy)
+                bottom = int(min(a[3] - margin, b[3] - margin) * sy)
+                left = int((min(a[2], b[2]) + 2) * sx)
+                right = int((max(a[0], b[0]) - 2) * sx)
+                if right > left and bottom > top:
+                    remaining -= (right - left) * (bottom - top)
+                    if remaining < 0:
+                        return {"status": "partial", "reason": "connector_sample_budget"}
+                    strip = foreground[top:bottom, left:right]
+                    bridge |= bool(np.max(np.count_nonzero(strip, axis=1)) / (right - left) > .8)
+            if bridge:
+                edges.append((i, j))
+                join(i, j)
+    grouped = {}
+    for index in range(len(frames)):
+        grouped.setdefault(find(index), []).append(index)
+    networks = []
+    for members in grouped.values():
+        connectors = sum(a in members and b in members for a, b in edges)
+        sharing = {i for pair in adjacent if all(j in members for j in pair) for i in pair}
+        if len(members) >= 3 and connectors >= 2 and len(sharing) / len(members) <= .25:
+            networks.append({"boxes": [frames[i]["bbox"] for i in members], "connector_count": connectors})
+    return {"status": "ok", "coordinate_system": "render_relative_points",
+            "frame_count": len(frames), "connected_box_groups": networks,
+            "large_curved_shapes": unique_shapes, "reference_height_points": round(reference_height, 3),
+            "connector_sample_pixels": MAX_CONNECTOR_SAMPLE_PIXELS - remaining}
+
+
+def _page_context(context, bounds):
+    """Translate reusable image-relative evidence to exported PDF points."""
+    def moved(box):
+        return [box[0] + bounds[0], box[1] + bounds[1], box[2] + bounds[0], box[3] + bounds[1]]
+    return {**context, "coordinate_system": "pdf_page_points",
+        "connected_box_groups": [{**group, "boxes": [moved(box) for box in group["boxes"]]}
+                                 for group in context.get("connected_box_groups", [])],
+        "large_curved_shapes": [moved(box) for box in context.get("large_curved_shapes", [])]}
+
+
 def _prepare_pixel_evidence(pixels, extractor, sx, sy, np, cv2):
     """Threshold once and erase detected long rulings; never recognize text."""
     gray = cv2.cvtColor(pixels, cv2.COLOR_RGB2GRAY)
@@ -138,7 +280,11 @@ def _prepare_pixel_evidence(pixels, extractor, sx, sy, np, cv2):
             stroke = max(1, round(min(max(1, thickness) + 2, 4 * normal_scale)))
             cv2.line(nonrule, (round(x1), round(y1)), (round(x2), round(y2)),
                      color=0, thickness=stroke)
-    return {"foreground": foreground, "nonrule": nonrule, "gray": gray,
+    try:
+        context = _diagram_context(foreground, sx, sy, np, cv2)
+    except Exception as exc:
+        context = {"status": "unavailable", "reason": type(exc).__name__}
+    return {"foreground": foreground, "nonrule": nonrule, "gray": gray, "figure_context": context,
             "remaining_budget": MAX_EVIDENCE_TOTAL_PIXELS}
 
 
@@ -180,6 +326,8 @@ def _pixel_evidence(group, masks, sx, sy, np, cv2):
               "nonrule_foreground_fraction": round(ink_pixels / sample_pixels, 6),
               "removed_rule_ink_fraction": round((foreground_pixels - ink_pixels) /
                                                  max(1, foreground_pixels), 6)}
+    result["diagram_context"] = context_evidence([raw[0] / sx, raw[1] / sy, raw[2] / sx, raw[3] / sy],
+                                                masks.get("figure_context", {}))
     midtones = gray[(gray > 30) & (gray < 230)]
     result["midtone_fraction"] = round(float(midtones.size) / sample_pixels, 6)
     result["midtone_peak_fraction"] = round(float(np.bincount(midtones, minlength=256).max()) /
@@ -284,6 +432,17 @@ def page_grids(region, *, dpi=144, tolerance=2.0):
                    "horizontal_rules": [], "horizontal_rules_truncated": False,
                    "returned_group_metadata": [],
                    "figure_evidence_policy": dict(FIGURE_EVIDENCE_POLICY),
+                   "figure_context_policy": {
+                       "max_contours": MAX_EVIDENCE_COMPONENTS,
+                       "max_frames": MAX_CONTEXT_FRAMES, "max_shapes": MAX_CONTEXT_SHAPES,
+                       "max_connector_sample_pixels": MAX_CONNECTOR_SAMPLE_PIXELS,
+                       "frame_min_width_points": 25, "frame_min_height_points": 10,
+                       "frame_min_area_points2": 250, "frame_fill_fraction_minimum": .88,
+                       "connector_gap_points": [4, 80], "connector_ink_support_minimum": .8,
+                       "shared_border_frame_fraction_maximum": .25,
+                       "curved_shape_min_width_points": 18, "curved_shape_min_height_points": 18,
+                       "curved_width_to_reference_height_minimum": 3,
+                       "curved_height_to_reference_height_minimum": 5},
                    "pixel_evidence_policy": {
                        "dark_threshold": 180, "min_rule_length_points": 12,
                        "max_erased_rule_thickness_points": 4,
@@ -375,6 +534,8 @@ def page_grids(region, *, dpi=144, tolerance=2.0):
             masks_error = None
         except Exception as exc:
             masks, masks_error = None, type(exc).__name__
+        if masks is not None:
+            diagnostics["figure_context"] = _page_context(masks.get("figure_context", {}), bounds)
         repair_notes = [{"status": "unchanged", "source_group_indices": [i]}
                         for i in range(len(groups))]
         try:
