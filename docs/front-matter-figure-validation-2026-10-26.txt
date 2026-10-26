@@ -1,0 +1,33 @@
+Front matter, figure and wrapped-row validation - 2026-10-26
+Code SHA-256: 7350716db4f737e7409ed719c591c0987f6aa86a7c2bf759f0e1de6aa09b45f1
+Input 967095.pdf SHA-256: 325667dac4da1fcb1476b148f8d5318fc476d688a49371662236ded49befdcef
+93 automatic tests passed. Five complete PDFs, 55 pages, processed with default auto strategy.
+No OCR, external model/API calls, or API credentials used. Structure JSON contains no cell text.
+
+New PDF: 21 pages; independent visual reference identifies two true tables, both on page 14.
+Before: 11 candidates. Nine false candidates on pages 1, 3, 9, and 16-21.
+After: 2 candidates, both on page 14. No candidates on the 20 negative pages or below the real tables.
+Table 1: 12x5 -> 7x5, including one header row and six logical records.
+Table 2: 11x8 -> 6x8, including one wrapped header row and five logical records.
+Both pass reference dimension/span/outer-bound checks (five-point bbox tolerance). Overlays were visually inspected.
+New PDF wall time: 10.3287 seconds including overlays; process peak RSS: 368.78 MB on this Mac.
+
+Causes and corrections:
+  Tight positioning gaps merged whole prose lines into single words under a fixed three-point tolerance. Word-position evidence now scales its tolerance to font size.
+  Figure strokes and photo texture could fit fixed glyph-size thresholds. The pixel gate now compares shapes with local text scale and requires strong repeated-graphic or photographic-tone evidence.
+  A majority of occupied columns can still be wrapped text. Native repair now needs repeated complete-column starts, with spacing guards to preserve ambiguous sparse records.
+
+Regression checks:
+  All five earlier scan tables still pass their reference checks; no detections on their 14 negative pages.
+  The earlier digital table still passes at 13x7, with no unmatched candidates.
+  All four vector-table cell grids in 965313.pdf are identical to the previous saved run.
+  Synthetic controls cover tight word spacing, genuine compact tables, wrapped narrative rows, sparse records, shaded tables, large headings, noisy scans and figure evidence.
+
+Scope and limitations:
+  Reference classification was created before consulting detector output. The fixes were then developed on this document, so final results are a regression check, not held-out accuracy.
+  No filenames, page numbers, paper titles, or figure-caption keywords control production detection.
+  Cell graphics, unusually spaced text, sparse records, and unseen ambiguous layouts may still require review. Every accepted table remains marked unreviewed.
+  The checks do not certify every cell edge or semantic grouping. Runtime and RSS do not measure electricity use or performance on low-power hardware.
+
+Machine-readable files: new-pdf-comparison.json, previous-scan-comparison.json, previous-digital-comparison.json.
+Before overlays remain in ../967095-oct26-before; final overlays are in 967095/.

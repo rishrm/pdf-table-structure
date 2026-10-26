@@ -13,18 +13,21 @@ def evaluate(reference, folder):
     documents, checks = [], []
     for doc in reference["documents"]:
         report = json.loads((folder / Path(doc["filename"]).stem / "structure.json").read_text())
+        if doc.get("input_sha256") and report["input_sha256"] != doc["input_sha256"]:
+            raise ValueError("Input PDF hash differs from the annotated document")
         pages = {page["page"]: page for page in report["pages"]}
         if set(pages) != set(range(1, doc["page_count"] + 1)):
             raise ValueError("Evaluation requires every page of each annotated scan")
         found = [number for number, page in pages.items() if page["tables"]]
         negative_pages = [item["page"] for item in doc["negative_pages"]]
-        table_results = []
+        table_results, matched_ids = [], set()
         for expected in doc["tables"]:
             box = expected["bbox_points"]
             candidates = [table for table in pages[expected["page"]]["tables"]
                 if intersection(table["bbox"], box) > .05 * (box[2] - box[0]) * (box[3] - box[1])
                 and intersection(table["bbox"], box) > .5 *
                 (table["bbox"][2] - table["bbox"][0]) * (table["bbox"][3] - table["bbox"][1])]
+            matched_ids.update((expected["page"], table["id"]) for table in candidates)
             single = len(candidates) == 1
             table = candidates[0] if single else None
             dimensions = single and table["row_count"] == expected["logical_rows"] and \
@@ -44,11 +47,15 @@ def evaluate(reference, folder):
                 "reference_checks_passed": bool(dimensions and spans and box_match)}
             table_results.append(result)
             checks.append(result)
+        unmatched = [{"page": number, "id": table["id"], "bbox": table["bbox"]}
+            for number, page in pages.items() for table in page["tables"]
+            if (number, table["id"]) not in matched_ids]
         documents.append({"filename": doc["filename"], "input_sha256": report["input_sha256"],
             "code_sha256": report["code_sha256"], "metrics": report["metrics"],
             "candidate_pages": found, "expected_table_pages": doc["table_pages"],
             "missed_table_pages": sorted(set(doc["table_pages"]) - set(found)),
             "negative_pages_with_candidates": sorted(set(found) & set(negative_pages)),
+            "unmatched_candidates": unmatched,
             "tables": table_results})
     return {"documents": documents, "summary": {
         "scan_pages": sum(doc["page_count"] for doc in reference["documents"]),
@@ -58,6 +65,7 @@ def evaluate(reference, folder):
         "tables_passing_reference_checks": sum(item["reference_checks_passed"] for item in checks),
         "missed_table_pages": sum(len(doc["missed_table_pages"]) for doc in documents),
         "negative_pages_with_candidates": sum(len(doc["negative_pages_with_candidates"]) for doc in documents),
+        "unmatched_candidate_count": sum(len(doc["unmatched_candidates"]) for doc in documents),
         "wall_seconds_including_overlays": round(sum(doc["metrics"]["wall_seconds"] for doc in documents), 4),
         "maximum_process_peak_rss_mb": max(doc["metrics"]["process_peak_rss_mb"] for doc in documents)}}
 

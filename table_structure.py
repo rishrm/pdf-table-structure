@@ -77,8 +77,10 @@ def structure_from_cells(raw_cells, method, tolerance=1.0):
 
 def word_boxes_only(page):
     # pdfplumber uses text locally for word segmentation. Only positions survive.
+    # Scale the join tolerance to font size: a fixed three-point gap can merge
+    # a publisher's entire line into one word when spaces are positioning gaps.
     return [[round(word[k], 3) for k in ("x0", "top", "x1", "bottom")]
-            for word in page.extract_words()]
+            for word in page.extract_words(x_tolerance_ratio=0.15)]
 
 
 def boxes_in_table(boxes, bbox):
@@ -267,6 +269,7 @@ def same_table(first, second):
 
 def image_evidence(table, metadata, horizontal_rules):
     """Reject graphic-dominated or weak tiny layout candidates; no OCR used."""
+    from figure_quality import figure_evidence_reasons
     pixel = metadata.get("pixel_evidence", {})
     b = table["bbox"]
     width = b[2] - b[0]
@@ -275,7 +278,7 @@ def image_evidence(table, metadata, horizontal_rules):
         b[1] - 16 <= (rule[1] + rule[3]) / 2 <= b[3] + 3
         for rule in horizontal_rules)
     evidence = {"long_horizontal_rule_support": rule_support, "pixel": pixel}
-    reasons = []
+    reasons = figure_evidence_reasons(pixel)
     if table.get("evidence", {}).get("long_prose_column_beside_short_cells") and not rule_support:
         reasons.append("unruled_layout_includes_long_prose_column")
     if pixel.get("status") == "ok":
@@ -523,7 +526,7 @@ def run(args):
             input_digest.update(chunk)
     report["input_sha256"] = input_digest.hexdigest()
     code = hashlib.sha256()
-    for name in ("table_structure.py", "raster_structure.py", "img2table_structure.py", "layout_repair.py", "ollama_refine.py"):
+    for name in ("table_structure.py", "raster_structure.py", "img2table_structure.py", "layout_repair.py", "figure_quality.py", "ollama_refine.py"):
         code.update((Path(__file__).parent / name).read_bytes())
     report["code_sha256"] = code.hexdigest()
     report["effective_settings"] = {"strategy": args.strategy, "pages": args.pages,
@@ -536,7 +539,7 @@ def run(args):
         "maximum_candidate_cells": 4096, "maximum_grid_slots": 65536,
         "minimum_unruled_layout_rows": 4, "duplicate_iou": 0.65,
         "graphic_large_ink_limit": 0.55, "graphic_character_ink_limit": 0.35,
-        "rule_anchored_layout_repair": True}
+        "rule_anchored_layout_repair": True, "word_x_tolerance_ratio": 0.15}
     report["dependency_versions"] = {}
     for name in ("pdfplumber", "pdfminer.six", "Pillow", "pypdfium2", "img2table",
                  "opencv-contrib-python", "numpy"):

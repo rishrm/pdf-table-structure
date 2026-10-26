@@ -57,12 +57,14 @@ python table_structure.py input.pdf --pages 1,3-5 --no-overlays --output runs/se
 `--bbox` limits detection to a known table region. This is especially useful for borderless tables because aligned prose can look like a table.
 
 - `lines`: use vector lines and rectangle edges. This is the recommended first experiment. Empty bordered cells are retained.
-- `text`: experimental alignment-based detection. Whitespace-only bands between text lines are collapsed, dividers are placed in observed word gaps, and outer edges receive up to four points of padding. Candidates cutting too many words or resembling long prose columns are rejected. This can also reject ambiguous real tables; inspect the rejection diagnostics. Wrapped text can still become multiple rows, and blank borderless rows may disappear.
+- `text`: experimental alignment-based detection. Whitespace-only bands between text lines are collapsed, dividers are placed in observed word gaps, and outer edges receive up to four points of padding. Word-position evidence uses a font-scaled gap tolerance (`x_tolerance_ratio=0.15`), so tightly positioned publisher text does not collapse entire lines into one word. Candidates cutting too many words or resembling long prose columns are rejected. This can also reject ambiguous real tables; inspect the rejection diagnostics. Wrapped text can still become multiple rows, and blank borderless rows may disappear.
 - `raster`: render the page and detect closed cell grids from image pixels. This can also be forced on digital PDFs to compare pixel detection with vector detection.
 - `img2table`: use the pinned image-layout backend directly, with implicit rows, implicit columns, and borderless detection enabled. It receives RGB pixels only; OCR, document content extraction and generative models are never invoked.
 - `auto` (default): try vector lines; on image-containing pages also try raster detection; use img2table when no accepted table exists or the page contains images; if still unresolved and selectable words exist, try gated text alignment. Rejected raw fragments cannot suppress fallback. Mixed vector/image pages retain distinct results and deduplicate overlapping or aligned subset rediscoveries. A failed image backend preserves earlier results and permits the next route. Borderless regions beside vector tables on purely digital pages still require a targeted `--bbox`/strategy run.
 
 Candidates with inconsistent or incomplete grids are rejected. Inferred image candidates receive additional geometric evidence checks: graphic-dominated ink is rejected, and a layout with fewer than four recurring rows requires independent long-rule support. Image/prose combinations and unruled grids joining a wide long-prose column to short cells are also rejected. These conservative choices can reject valid small borderless tables or tables with narrative columns. They are tuned on a small regression set, not a calibrated table classifier; all results still require review.
+
+Figure checks additionally compare component sizes with the local median text-like height. Most ink must be in oversized shapes, with either repeated vertical spread or diffuse photographic tones, before this gate rejects a candidate. Large headings and flat gray row shading alone are insufficient. Evidence is computed in the existing bounded crop/component pass and recorded with its policy. Genuine tables whose cells are dominated by graphics remain ambiguous and may be rejected.
 
 ## Scanned and image-based tables
 
@@ -82,7 +84,7 @@ The closed-grid route needs enough horizontal **and** vertical boundaries to for
 
 After img2table detection, a conservative repair pass handles partially ruled tables with sufficient evidence. It uses the printed top/header/bottom rules to exclude captions and footnotes; header dividers or persistent body whitespace to recover missing columns; and repeated leading labels to keep wrapped numeric values in their logical rows. Nearby header/body fragments are rebuilt as one grid, and grouped headings crossing body dividers become spanning cells. Full-height header dividers keep multiline labels in a single header row. Component crops and processing work are bounded.
 
-For selectable-text PDFs, an additional geometry pass can use word positions to match header and body columns, recover the full ruled envelope, and group wrapped row labels using repeated occupancy in the other columns. It does not interpret or export the words. This also avoids mistaking shaded row bands for column dividers. A matching header pattern and printed bottom rule are mandatory.
+For selectable-text PDFs, an additional geometry pass can use word positions to match header and body columns, recover the full ruled envelope, and group wrapped rows using repeated complete-column starts. Dense incomplete lines also need tight continuation spacing within the observed record pitch; ambiguous sparse records preserve the original fragments. It does not interpret or export the words. This also avoids mistaking shaded row bands for column dividers. A matching header pattern and printed bottom rule are mandatory.
 
 These repairs are conditional: missing rule evidence, sparse anchors, columns with little body ink, and conflicting body rulings preserve the earlier candidate. They do not solve arbitrary borderless layouts, ambiguous empty rows, semantic groupings, or every skewed scan. Caption/footnote separation follows printed boundaries rather than language meaning. Use overlays and a consistent annotation policy before reporting accuracy.
 
@@ -150,6 +152,14 @@ python evaluate_scans.py --reference tests/fixtures/additional-layout-reference.
 ```
 
 The evaluator checks one candidate per reference, row/column counts, required header spans, and outer bounds within five points. It reports negative-page detections separately. It does not certify every cell edge or arbitrary semantic merges.
+
+The October 26 front-matter/figure regression adds a 21-page PDF with two true tables. Before the fix, the parser returned 11 candidates, including front matter, figure fragments and reference pages, and over-split both real tables. It now returns only the two page-14 tables at 7x5 and 6x8, with no candidates on the 20 negative pages. All earlier reference checks still pass across the complete 55-page rerun; 93 automatic tests pass. The new document was visually annotated before consulting parser output, but the final fixes were developed against it, so it is now a regression fixture rather than a held-out accuracy estimate. See [the detailed results](docs/front-matter-figure-validation-2026-10-26.txt).
+
+```bash
+python evaluate_scans.py --reference tests/fixtures/front-matter-figure-reference.json --runs /path/to/results --output /path/to/front-matter-comparison.json
+```
+
+The evaluator also reports unmatched candidates (including extras on a real table page) and verifies an annotation's input hash when present.
 
 `metrics.wall_seconds` includes detection and, if requested, rendering and model calls. Each page also records `detection_seconds`. `process_peak_rss_mb` measures the local Python process on macOS/Linux, including rendering; it does not measure the remote model's memory or power. Successful model responses can include server-reported token counts and durations in `model_review.metrics`. No electricity or API price estimate is inferred from these numbers.
 

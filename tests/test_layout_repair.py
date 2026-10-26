@@ -142,6 +142,50 @@ class LayoutRepairTests(unittest.TestCase):
                 self.assertEqual(len(repaired), 2)
                 self.assertTrue(all(n["status"] == "unchanged" for n in notes))
 
+    def test_wrapped_text_in_most_columns_does_not_create_extra_records(self):
+        xs = [10, 70, 130, 190, 250, 310]
+        groups = [grid(xs, [40, 60, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180])]
+        rules = [[10, y, 310, y] for y in (40, 60, 180)]
+        words = [(x + 5, 48, x + 30, 55) for x in xs[:-1]]
+        for top in (70, 100, 130, 160):
+            words += [(x + 5, top, x + 30, top + 7) for x in xs[:-1]]
+            # Four of five columns wrap. A majority-occupancy rule incorrectly
+            # treated these continuations as new records.
+            words += [(x + 5, top + 9, x + 25, top + 16) for x in xs[:-2]]
+        repaired, notes = repair_word_groups(groups, rules, words)
+        table = structure_from_cells(repaired[0], "img2table")
+        self.assertEqual((table["row_count"], table["column_count"]), (5, 5))
+        self.assertEqual(notes[0]["body_text_lines"], 8)
+        self.assertEqual(notes[0]["body_rows"], 4)
+
+    def test_incomplete_record_starts_are_left_for_review(self):
+        groups, rules, words = self.word_fixture()
+        # Only one record has ink in every column. The other row starts are
+        # ambiguous and must not be collapsed into invented full records.
+        words = [b for b in words if not (b[0] == 220 and b[1] in (100, 120, 140))]
+        repaired, notes = repair_word_groups(groups, rules, words)
+        self.assertEqual(len(repaired), len(groups))
+        self.assertTrue(all(note["status"] == "unchanged" for note in notes))
+
+    def test_one_sparse_record_among_complete_records_is_not_absorbed(self):
+        groups, rules, words = self.word_fixture()
+        words = [b for b in words if not (b[0] == 220 and b[1] == 100)]
+        repaired, notes = repair_word_groups(groups, rules, words)
+        self.assertEqual(len(repaired), len(groups))
+        self.assertTrue(all(note["status"] == "unchanged" for note in notes))
+
+    def test_tightly_spaced_sparse_record_is_not_assumed_to_be_wrapped_text(self):
+        xs = [10, 80, 150, 230]
+        groups = [grid(xs, [40, 70, 80, 89, 98, 107, 116])]
+        rules = [[10, y, 230, y] for y in (40, 70, 116)]
+        words = [(x + 5, 50, x + 25, 57) for x in xs[:-1]]
+        for top in (80, 89, 98, 107):
+            words += [(x + 5, top, x + 25, top + 7) for x in xs[:-1]
+                      if not (x == 150 and top == 89)]
+        repaired, notes = repair_word_groups(groups, rules, words)
+        self.assertEqual(repaired, groups)
+        self.assertEqual(notes[0]["status"], "unchanged")
+
 
 if __name__ == "__main__":
     unittest.main()

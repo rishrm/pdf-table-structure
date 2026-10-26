@@ -12,6 +12,7 @@ import math
 import time
 
 from PIL import Image
+from figure_quality import FIGURE_EVIDENCE_POLICY
 
 SUPPORTED_VERSION = "2.0.0"
 MAX_RENDER_DIMENSION = 2200
@@ -137,7 +138,7 @@ def _prepare_pixel_evidence(pixels, extractor, sx, sy, np, cv2):
             stroke = max(1, round(min(max(1, thickness) + 2, 4 * normal_scale)))
             cv2.line(nonrule, (round(x1), round(y1)), (round(x2), round(y2)),
                      color=0, thickness=stroke)
-    return {"foreground": foreground, "nonrule": nonrule,
+    return {"foreground": foreground, "nonrule": nonrule, "gray": gray,
             "remaining_budget": MAX_EVIDENCE_TOTAL_PIXELS}
 
 
@@ -163,9 +164,11 @@ def _pixel_evidence(group, masks, sx, sy, np, cv2):
         return {"status": "unavailable", "reason": "page_evidence_pixel_budget"}
     masks["remaining_budget"] -= sample_pixels
     fg, ink = foreground[y0:y1, x0:x1], nonrule[y0:y1, x0:x1]
+    gray = masks["gray"][y0:y1, x0:x1]
     if sample_size != (crop_width, crop_height):
         fg = cv2.resize(fg, sample_size, interpolation=cv2.INTER_NEAREST)
         ink = cv2.resize(ink, sample_size, interpolation=cv2.INTER_NEAREST)
+        gray = cv2.resize(gray, sample_size, interpolation=cv2.INTER_AREA)
     scale_x, scale_y = sx * sample_size[0] / crop_width, sy * sample_size[1] / crop_height
     foreground_pixels, ink_pixels = int(np.count_nonzero(fg)), int(np.count_nonzero(ink))
     result = {"status": "ok", "dark_threshold": 180,
@@ -177,6 +180,10 @@ def _pixel_evidence(group, masks, sx, sy, np, cv2):
               "nonrule_foreground_fraction": round(ink_pixels / sample_pixels, 6),
               "removed_rule_ink_fraction": round((foreground_pixels - ink_pixels) /
                                                  max(1, foreground_pixels), 6)}
+    midtones = gray[(gray > 30) & (gray < 230)]
+    result["midtone_fraction"] = round(float(midtones.size) / sample_pixels, 6)
+    result["midtone_peak_fraction"] = round(float(np.bincount(midtones, minlength=256).max()) /
+                                             max(1, midtones.size), 6)
     if min(scale_x, scale_y) < 0.75:
         result.update(status="partial", reason="insufficient_scale_for_components")
         return result
@@ -190,6 +197,21 @@ def _pixel_evidence(group, masks, sx, sy, np, cv2):
     heights = stats[1:, cv2.CC_STAT_HEIGHT].astype("float64") / scale_y
     areas_pixels = stats[1:, cv2.CC_STAT_AREA].astype("float64")
     areas = areas_pixels / (scale_x * scale_y)
+    # Use the same connected-component pass for a local size comparison. This
+    # catches diagram primitives which fit the broad fixed-size glyph limits.
+    reference = (areas_pixels >= 3) & (heights >= .5) & (widths >= .25)
+    reference_height = float(np.median(heights[reference])) if np.any(reference) else 0
+    height_limit = max(FIGURE_EVIDENCE_POLICY["oversized_min_height_points"],
+                       FIGURE_EVIDENCE_POLICY["oversized_height_ratio"] * reference_height)
+    oversized = reference & (heights > height_limit)
+    centers = stats[1:, cv2.CC_STAT_TOP] + stats[1:, cv2.CC_STAT_HEIGHT] / 2
+    spread = float(np.ptp(centers[oversized])) / sample_size[1] if np.any(oversized) else 0
+    result.update(reference_component_count=int(np.count_nonzero(reference)),
+        reference_component_height_points=round(reference_height, 3),
+        oversized_component_height_limit_points=round(height_limit, 3),
+        oversized_component_count=int(np.count_nonzero(oversized)),
+        oversized_component_ink_fraction=round(float(areas_pixels[oversized].sum()) / max(1, ink_pixels), 6),
+        oversized_component_vertical_spread=round(spread, 6))
     longest = np.maximum(widths, heights)
     aspect = longest / np.maximum(np.minimum(widths, heights), 0.25)
     large = (longest > 32) | (areas > 200) | ((aspect >= 12) & (longest >= 12))
@@ -261,6 +283,7 @@ def page_grids(region, *, dpi=144, tolerance=2.0):
                    "cell_positions": 0, "unique_cells": 0,
                    "horizontal_rules": [], "horizontal_rules_truncated": False,
                    "returned_group_metadata": [],
+                   "figure_evidence_policy": dict(FIGURE_EVIDENCE_POLICY),
                    "pixel_evidence_policy": {
                        "dark_threshold": 180, "min_rule_length_points": 12,
                        "max_erased_rule_thickness_points": 4,

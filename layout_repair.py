@@ -247,10 +247,32 @@ def repair_word_groups(groups, horizontal, words):
                 # The complete header must agree with the body-derived columns.
                 if any(a < x < b for a, b in header_columns for x in xs[1:-1]):
                     continue
-                occupied = [set(c for c in range(1, len(xs) - 1) if any(
+                occupied = [set(c for c in range(len(xs) - 1) if any(
                     xs[c] <= (b[0] + b[2]) / 2 < xs[c + 1] for b in line)) for line in lines]
-                anchors = [i for i, cols in enumerate(occupied) if len(cols) >= max(2, (len(xs) - 2) * .5)]
+                # A majority of columns can still contain continuation text.
+                # Repeated starts spanning every column provide stronger anchors;
+                # sparse/ambiguous layouts retain their original candidate.
+                anchors = [i for i, cols in enumerate(occupied) if len(cols) == len(xs) - 1]
                 if len(anchors) < 3 or anchors[0] != 0:
+                    continue
+                # A row with one blank value can resemble wrapped prose. Do not
+                # absorb a dense, leading-label line when its spacing suggests
+                # a separate record. Both checks are geometric; no labels or
+                # cell values are interpreted.
+                starts = [min(b[1] for b in line) for line in lines]
+                record_pitch = min(starts[b] - starts[a] for a, b in zip(anchors, anchors[1:]))
+                ambiguous = False
+                previous_anchor = 0
+                for index, cols in enumerate(occupied):
+                    if index in anchors:
+                        previous_anchor = index
+                    elif 0 in cols and len(cols) >= max(2, (len(xs) - 1) * .5):
+                        gap_before = starts[index] - max(b[3] for b in lines[index - 1])
+                        if gap_before > height * .5 + .5 or \
+                                starts[index] - starts[previous_anchor] >= .8 * record_pitch:
+                            ambiguous = True
+                            break
+                if ambiguous:
                     continue
                 records = [sum(lines[a:b], []) for a, b in zip(anchors, anchors[1:] + [len(lines)])]
                 if any(not any(xs[0] <= (b[0] + b[2]) / 2 < xs[1] for b in record) for record in records):

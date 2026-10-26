@@ -1,0 +1,218 @@
+{
+  "schema_version": "1.0",
+  "annotation_method": "Independent assistant visual review of all 21 original page renders at 96 dpi and page 14 at 144 dpi, before consulting parser output. Printed horizontal rule coordinates were read from PDF rectangle geometry after visual identification. No OCR or external model API calls were used.",
+  "coordinate_system": "PDF points, x right, y down; bbox [left, top, right, bottom]; page numbers 1-based; logical row and column indices 0-based",
+  "evaluation_policy": {
+    "bbox_tolerance_points": 5,
+    "count_rows": "Count each multiline header as one logical header row, and each record with its wrapped continuation lines as one logical body row. Captions and footnotes are excluded.",
+    "content_policy": "Only structural annotations and generic layout descriptions are stored; no table contents are transcribed.",
+    "confidence": "High for page classification, table count, and logical dimensions; intermediate body row coordinates and figure boxes are visual approximations."
+  },
+  "documents": [
+    {
+      "filename": "967095.pdf",
+      "input_sha256": "325667dac4da1fcb1476b148f8d5318fc476d688a49371662236ded49befdcef",
+      "page_count": 21,
+      "page_size_points": [
+        595.276,
+        779.528
+      ],
+      "table_pages": [
+        14
+      ],
+      "tables": [
+        {
+          "id": "967095-p14-t1",
+          "page": 14,
+          "bbox_points": [
+            42.52,
+            65.084,
+            552.756,
+            258.634
+          ],
+          "logical_rows": 7,
+          "logical_columns": 5,
+          "header_rows": 1,
+          "body_rows": 6,
+          "required_header_spans": [],
+          "header_separator_y_points": 83.368,
+          "approximate_body_first_line_top_points": [
+            88,
+            115,
+            142,
+            169,
+            196,
+            223
+          ],
+          "ambiguities": [
+            "There are no printed vertical grid lines. Column boundaries belong in the white gutters between aligned content blocks.",
+            "Most body cells contain multiple text lines; these continuation lines must not become separate logical rows.",
+            "The long descriptive columns are genuine table cells, not article prose. The narrow final column contains one short entry per logical record.",
+            "No substantive merged header or body cells are visually indicated."
+          ]
+        },
+        {
+          "id": "967095-p14-t2",
+          "page": 14,
+          "bbox_points": [
+            42.52,
+            296.221,
+            552.756,
+            462.785
+          ],
+          "logical_rows": 6,
+          "logical_columns": 8,
+          "header_rows": 1,
+          "body_rows": 5,
+          "required_header_spans": [],
+          "header_separator_y_points": 323.519,
+          "approximate_body_first_line_top_points": [
+            328,
+            346,
+            373,
+            400,
+            427
+          ],
+          "ambiguities": [
+            "The stacked header labels occupy a single logical header row.",
+            "Several body cells, including the narrow final column, have two or three lines in the same logical row.",
+            "The second strategy label consists of two lines and shares one set of values; it is one body row.",
+            "There are no printed vertical grid lines or visually indicated merged cells."
+          ]
+        }
+      ],
+      "negative_pages": [
+        {
+          "page": 1,
+          "type": "journal_front_matter_with_prose"
+        },
+        {
+          "page": 2,
+          "type": "prose"
+        },
+        {
+          "page": 3,
+          "type": "multi_panel_figure_and_caption",
+          "figure_bbox_points": [
+            88,
+            50,
+            508,
+            432
+          ]
+        },
+        {
+          "page": 4,
+          "type": "prose"
+        },
+        {
+          "page": 5,
+          "type": "multi_panel_figure_and_caption",
+          "figure_bbox_points": [
+            100,
+            51,
+            492,
+            591
+          ]
+        },
+        {
+          "page": 6,
+          "type": "prose"
+        },
+        {
+          "page": 7,
+          "type": "multi_panel_figure_and_caption",
+          "figure_bbox_points": [
+            100,
+            52,
+            498,
+            605
+          ]
+        },
+        {
+          "page": 8,
+          "type": "prose"
+        },
+        {
+          "page": 9,
+          "type": "multi_panel_figure_and_caption",
+          "figure_bbox_points": [
+            117,
+            53,
+            481,
+            579
+          ]
+        },
+        {
+          "page": 10,
+          "type": "prose"
+        },
+        {
+          "page": 11,
+          "type": "multi_panel_figure_and_caption",
+          "figure_bbox_points": [
+            94,
+            51,
+            506,
+            405
+          ]
+        },
+        {
+          "page": 12,
+          "type": "multi_panel_figure_and_caption",
+          "figure_bbox_points": [
+            107,
+            52,
+            490,
+            582
+          ]
+        },
+        {
+          "page": 13,
+          "type": "prose"
+        },
+        {
+          "page": 15,
+          "type": "prose"
+        },
+        {
+          "page": 16,
+          "type": "references"
+        },
+        {
+          "page": 17,
+          "type": "references"
+        },
+        {
+          "page": 18,
+          "type": "references"
+        },
+        {
+          "page": 19,
+          "type": "references"
+        },
+        {
+          "page": 20,
+          "type": "references"
+        },
+        {
+          "page": 21,
+          "type": "references"
+        }
+      ],
+      "mixed_page_negative_regions": [
+        {
+          "page": 14,
+          "bbox_points": [
+            42,
+            480,
+            553,
+            724
+          ],
+          "type": "two_column_article_prose_below_tables"
+        }
+      ]
+    }
+  ],
+  "expected_total_tables": 2,
+  "expected_negative_pages": 20
+}
