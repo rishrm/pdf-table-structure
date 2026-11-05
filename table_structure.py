@@ -267,7 +267,8 @@ def same_table(first, second):
     return (union > 0 and intersection / union >= 0.65) or contained_grid(second, first)
 
 
-def image_evidence(table, metadata, horizontal_rules, figure_context=None):
+def image_evidence(table, metadata, horizontal_rules, figure_context=None, *,
+                   require_repeated_rows=True):
     """Reject graphic-dominated or weak tiny layout candidates; no OCR used."""
     from figure_quality import context_evidence, figure_evidence_reasons
     pixel = dict(metadata.get("pixel_evidence", {}))
@@ -289,7 +290,7 @@ def image_evidence(table, metadata, horizontal_rules, figure_context=None):
             reasons.append("graphic_dominated_ink")
         # A few aligned marks inside a figure are not enough to establish a
         # borderless table. Real small ruled tables retain independent support.
-        if table["row_count"] < 4 and not rule_support:
+        if require_repeated_rows and table["row_count"] < 4 and not rule_support:
             reasons.append("insufficient_repeated_layout_or_rules")
     return reasons, evidence
 
@@ -301,6 +302,7 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
     boxes = None
     image_attempted = False
     diagnostics = {}
+    image_cache = {}
 
     def ingest(groups, method, transform=None, backend_details=None):
         nonlocal boxes
@@ -343,8 +345,30 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                 evidence_reasons, evidence = text_evidence(candidate, boxes, region.bbox)
                 candidate["evidence"] = evidence
                 reasons.extend(evidence_reasons)
-                if method == "img2table":
+                if method in ("text", "img2table"):
                     reasons.extend(mixed_image_evidence(candidate, boxes, region.images))
+            if method == "text" and not reasons:
+                # Text alignment must not bypass the same figure/prose checks
+                # already applied to inferred image grids. Context is measured
+                # against this candidate, not copied from a rejected fragment.
+                details = diagnostics.get("img2table_detection", {})
+                pixel = {"status": "unavailable", "reason": "no_image_evidence_sampler"}
+                if image_cache.get("sample_candidate") is not None:
+                    try:
+                        pixel = image_cache["sample_candidate"](candidate["bbox"])
+                    except MemoryError:
+                        raise
+                    except Exception as exc:
+                        pixel = {"status": "unavailable", "reason": type(exc).__name__}
+                # Native printed rules remain valid even if the optional
+                # image pass fails, returns empty hints, or misses this region.
+                rules = [[e[k] for k in ("x0", "top", "x1", "bottom")]
+                         for e in getattr(region, "horizontal_edges", [])[:20000]]
+                rules = (rules + details.get("horizontal_rules", []))[:20000]
+                image_reasons, evidence = image_evidence(candidate, {"pixel_evidence": pixel},
+                    rules, details.get("figure_context"), require_repeated_rows=False)
+                candidate.setdefault("evidence", {}).update(evidence)
+                reasons.extend(image_reasons)
             if method in ("img2table", "native", "scan_recovery") and backend_details and not reasons:
                 group_metadata = backend_details.get("returned_group_metadata", [])
                 metadata = group_metadata[raw_index] if raw_index < len(group_metadata) else {}
@@ -433,7 +457,8 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                 from raster_structure import page_grids
             else:
                 from img2table_structure import page_grids
-            groups, transform, details = page_grids(region, dpi=dpi, tolerance=tolerance)
+            kwargs = {"evidence_cache": image_cache} if method == "img2table" else {}
+            groups, transform, details = page_grids(region, dpi=dpi, tolerance=tolerance, **kwargs)
             if method == "img2table" and region.chars and groups:
                 try:
                     from layout_repair import repair_word_groups

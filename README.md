@@ -71,6 +71,8 @@ Figure checks additionally compare component sizes with the local median text-li
 
 Page context also detects networks of separated boxes linked by thin ink bridges, and repeated large curved panel shapes spread across a candidate. Adjacent table cells sharing borders and graphics confined to one table column are positive controls. The same measured context reviews retained raster candidates without another render. Partial/unavailable context does not reject candidates by itself. This remains a heuristic distinction; genuine image-heavy tables can be ambiguous.
 
+The automatic text fallback now also applies the existing mixed-image, figure and long-prose checks. It samples its own candidate bounds using the preceding img2table render and remaining pixel budget; rejected image fragments do not supply replacement pixel statistics for a different region. This prevents text alignment from bypassing available figure evidence without rendering the page again. Native printed rules still support text candidates when optional image hints are missing. Missing or partial pixel evidence remains advisory, and the image-only minimum-row rule is not imposed on text candidates. Explicit `--strategy text` uses word geometry and native rules; it does not run the image backend or obtain its pixel sampler.
+
 ## Scanned and image-based tables
 
 ```bash
@@ -90,6 +92,8 @@ The closed-grid route needs enough horizontal **and** vertical boundaries to for
 After img2table detection, a conservative repair pass handles partially ruled tables with sufficient evidence. It uses the printed top/header/bottom rules to exclude captions and footnotes; header dividers or persistent body whitespace to recover missing columns; and repeated leading labels to keep wrapped numeric values in their logical rows. Nearby header/body fragments are rebuilt as one grid, and grouped headings crossing body dividers become spanning cells. Full-height header dividers keep multiline labels in a single header row. Component crops and processing work are bounded.
 
 For selectable-text PDFs, an additional geometry pass can use word positions to match header and body columns, recover the full ruled envelope, and group wrapped rows using repeated complete-column starts. Dense incomplete lines also need tight continuation spacing within the observed record pitch; ambiguous sparse records preserve the original fragments. It does not interpret or export the words. This also avoids mistaking shaded row bands for column dividers. A matching header pattern and printed bottom rule are mandatory.
+
+For tables mixing short records and wrapped records, the shortest record pitch can be misleading. The existing word repair now also accepts tightly spaced continuations when at least three complete-record gaps are consistently wider than every inferred continuation gap, with at least two continuation gaps providing support. Equal or mixed spacing retains the earlier ambiguity guard. The resulting row boundaries stay inside the printed table envelope; captions and footnotes remain outside. This is geometric grouping, not semantic verification of records.
 
 These repairs are conditional: missing rule evidence, sparse anchors, columns with little body ink, and conflicting body rulings preserve the earlier candidate. They do not solve arbitrary borderless layouts, ambiguous empty rows, semantic groupings, or every skewed scan. Caption/footnote separation follows printed boundaries rather than language meaning. Use overlays and a consistent annotation policy before reporting accuracy.
 

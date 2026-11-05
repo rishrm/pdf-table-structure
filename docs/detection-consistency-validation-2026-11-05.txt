@@ -1,0 +1,53 @@
+Detection consistency fix - 5 November 2026
+
+Scope
+Apply existing image/prose validation to inferred text candidates. No model,
+dependency, CLI feature, output format or row/column repair algorithm added.
+The automatic fallback samples its exact candidate bounds from the preceding
+img2table render and remaining pixel budget. It does not inherit pixel ratios
+from an unrelated rejected image fragment. Missing/partial evidence remains
+advisory. Native printed rules retain support when image hints are unavailable
+or incomplete. Small text tables keep their existing row-count acceptance.
+
+Automated validation
+162 tests passed. Seventeen new tests cover route consistency, valid neighboring
+and small tables, native rule support after backend failure, missing/partial
+evidence, coordinate conversion, lazy mask preparation, one render, shared
+sampling budgets and clearing the sampler between pages.
+Four key rejection scenarios were independently verified to fail on c43cc4e.
+
+Real-document rerun - PARTIAL
+Only 967862.pdf has been rerun on the final modified source. The recovered
+iCloud copy and the retained workspace copy match the original SHA-256:
+8a739527e58c628ebf118e9e99ec19860d5edf90aa4652735afdf52799ac40b8
+
+Same frozen references/scorer, one-to-one IoU >= 0.50:
+                         c43cc4e     Modified source
+Returned candidates        23               7
+Matched true tables         2               2
+False/unmatched outputs    21               5
+Missed reference tables     0               0
+Exact row/column counts    1/2             1/2
+Strict recorded checks    1/2             1/2
+
+Both retained true tables have identical full geometry. Sixteen false text
+outputs were removed. The remaining false outputs are on pages 2, 11, 19, 31
+and 42; row/header errors were not addressed by this scoped change. No backend
+failures/unavailable warnings were recorded. The final run took 25.53 seconds
+inside the parser, with 430.22 MiB peak process RSS; this single pass is not a
+controlled speed/energy comparison. Page 4 old/new overlays were inspected.
+
+Full eight-document comparison is NOT complete
+The original Desktop/TIM folder is absent. Seven source PDFs remain missing:
+963947.pdf, 965848.pdf, 965873.pdf, 965888.pdf, 965986.pdf,
+967390.pdf, 967916.pdf.
+Saved references, JSON outputs and screenshots remain available. Searches of
+local PDFs, archived PDF members, app attachments/cache and exact Drive names
+did not recover matching originals for those seven files. Existing results
+must not be represented as a fresh rerun, and no new eight-file aggregate is
+claimed. Run the prepared work/detection-nov05/run_compare.py after obtaining
+all eight source files; it verifies their frozen hashes before any extraction.
+
+The references are assistant visual annotations, not human-validated ground
+truth. Current outputs still require review. This iteration now uses 967862 as
+development/regression evidence, not an unseen general-accuracy estimate.

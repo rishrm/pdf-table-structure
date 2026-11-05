@@ -1,0 +1,56 @@
+Wrapped row boundaries - 5 November 2026
+
+Scope
+Improve the existing printed-rule and word-position repair on the available
+967862.pdf. No new model, dependency, CLI option, detector or export feature.
+This follows the detection-consistency change documented separately.
+
+Diagnosis
+Both real tables already had correct outer bounds (within 0.3 PDF points of
+the frozen visual reference). Page 3 was returned as 34x3 instead of 21x3:
+42 physical body lines contain 20 records, plus one column-header row.
+The ambiguity guard compared continuation spacing against the shortest
+complete-record pitch. That incorrectly rejected valid wrapping in a table
+mixing one-line records with two- and three-line records.
+
+Change
+Retain the previous guard unless at least three complete-record gaps and at
+least two continuation gaps show clear separation. Every continuation gap
+must be nonnegative, tightly spaced and smaller than the smallest known
+record-start gap by max(0.5pt, 10% of median word height). This evidence uses
+positions only. Equal/mixed spacing retains the existing ambiguity guard;
+printed top/header/bottom rules and matching columns remain required.
+The existing geometry still cannot establish all semantic row groupings.
+
+Full available-document rerun
+Input: 967862.pdf, 42 pages
+SHA-256: 8a739527e58c628ebf118e9e99ec19860d5edf90aa4652735afdf52799ac40b8
+Strategy: auto; no overlays during measurement, no OCR/model calls.
+
+Measure                     Before row fix       After row fix
+Page 3 grid                    34x3                  21x3
+Page 6 grid                    24x4                  24x4
+Correct row/column counts       1/2                   2/2
+Recorded bounds/span checklist  1/2                   2/2
+True table matches             2                     2
+False outputs                  5                     5
+Missed true tables             0                     0
+
+Only the page 3 candidate geometry changed. The six other returned candidate
+geometries are identical, including the correct page 6 table. Both true-table
+outer bounds are exactly unchanged. All 159 page 3 header/body word boxes fit
+wholly inside individual cells, and all 18 caption words stay outside. The
+page 6 first row contains real entries, not a semantically classified header.
+
+168 automated tests passed, including six new regression tests covering the
+real geometry, scale/translation variants, blank middle fields, equal spacing,
+caption exclusion, missing bottom rules and conflicting headers. The old
+repair fails the real fixture and its three transformed variants. Both table
+overlays were visually inspected. No backend failure was recorded in the run.
+
+Remaining limits
+False outputs on pages 2, 11, 19, 31 and 42 remain. This is a development-set
+result using assistant visual references, not human-validated general accuracy.
+The seven other original PDFs remain unavailable and were not rerun. Processing
+time/RAM from this single pass do not establish power or speed improvements.
+The pipeline still exports structure and review overlays, not tagged PDFs.

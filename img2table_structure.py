@@ -407,7 +407,7 @@ def _layout_components(area, masks, bounds, sx, sy, cv2):
     return components
 
 
-def page_grids(region, *, dpi=144, tolerance=2.0):
+def page_grids(region, *, dpi=144, tolerance=2.0, evidence_cache=None):
     """Return ``(cell_groups, transform, diagnostics)`` in pdfplumber page points.
 
     Each group is a list of ``(x0, top, x1, bottom)`` rectangles. Rendering already
@@ -415,8 +415,12 @@ def page_grids(region, *, dpi=144, tolerance=2.0):
     The transform therefore has ``deskew_degrees=0`` and is compatible with the
     raster adapter. ``tolerance`` is recorded for interface compatibility; this
     pinned extractor exposes no line-snapping tolerance. The caller applies its
-    own boundary clustering and candidate validation.
+    own boundary clustering and candidate validation. An optional, page-local
+    evidence cache lets later candidates reuse this render and its remaining
+    pixel budget. The live sampler is never included in exported diagnostics.
     """
+    if evidence_cache is not None:
+        evidence_cache.clear()
     started = time.perf_counter()
     diagnostics = {"engine": "img2table", "version": None,
                    "supported_version": SUPPORTED_VERSION,
@@ -536,6 +540,26 @@ def page_grids(region, *, dpi=144, tolerance=2.0):
             masks, masks_error = None, type(exc).__name__
         if masks is not None:
             diagnostics["figure_context"] = _page_context(masks.get("figure_context", {}), bounds)
+        if evidence_cache is not None:
+            def sample_candidate(bbox):
+                nonlocal masks, masks_error
+                if masks is None and masks_error is None:
+                    # No image table may have been proposed. Delay this work
+                    # until a later text candidate actually needs validation.
+                    try:
+                        masks = _prepare_pixel_evidence(pixels, extractor, sx, sy, np, cv2)
+                        diagnostics["figure_context"] = _page_context(
+                            masks.get("figure_context", {}), bounds)
+                    except MemoryError:
+                        raise
+                    except Exception as exc:
+                        masks_error = type(exc).__name__
+                if masks is None:
+                    return {"status": "unavailable", "reason": masks_error}
+                pixel_box = ((bbox[0] - bounds[0]) * sx, (bbox[1] - bounds[1]) * sy,
+                             (bbox[2] - bounds[0]) * sx, (bbox[3] - bounds[1]) * sy)
+                return _pixel_evidence([pixel_box], masks, sx, sy, np, cv2)
+            evidence_cache["sample_candidate"] = sample_candidate
         repair_notes = [{"status": "unchanged", "source_group_indices": [i]}
                         for i in range(len(groups))]
         try:

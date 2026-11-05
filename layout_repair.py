@@ -261,6 +261,19 @@ def repair_word_groups(groups, horizontal, words):
                 # cell values are interpreted.
                 starts = [min(b[1] for b in line) for line in lines]
                 record_pitch = min(starts[b] - starts[a] for a, b in zip(anchors, anchors[1:]))
+                line_ends = [max(b[3] for b in line) for line in lines]
+                record_gaps = [starts[i] - line_ends[i - 1] for i in anchors[1:]]
+                continuation_gaps = [starts[i] - line_ends[i - 1]
+                                     for i in range(1, len(lines)) if i not in anchors]
+                # Short one-line records need not share the pitch of wrapped
+                # records. Permit that distinction only when repeated complete
+                # record starts are separated more widely than EVERY inferred
+                # continuation. Equal/mixed spacing keeps the old ambiguity
+                # guard for sparse records whose grouping is not established.
+                separated_spacing = bool(len(record_gaps) >= 3 and
+                    len(continuation_gaps) >= 2 and min(continuation_gaps) >= 0 and
+                    max(continuation_gaps) <= height * .5 + .5 and
+                    min(record_gaps) - max(continuation_gaps) >= max(.5, height * .1))
                 ambiguous = False
                 previous_anchor = 0
                 for index, cols in enumerate(occupied):
@@ -269,7 +282,8 @@ def repair_word_groups(groups, horizontal, words):
                     elif 0 in cols and len(cols) >= max(2, (len(xs) - 1) * .5):
                         gap_before = starts[index] - max(b[3] for b in lines[index - 1])
                         if gap_before > height * .5 + .5 or \
-                                starts[index] - starts[previous_anchor] >= .8 * record_pitch:
+                                (starts[index] - starts[previous_anchor] >= .8 * record_pitch
+                                 and not separated_spacing):
                             ambiguous = True
                             break
                 if ambiguous:
@@ -288,6 +302,12 @@ def repair_word_groups(groups, horizontal, words):
                     "body_rows": len(records), "body_text_lines": len(lines), "columns": len(xs) - 1,
                     "bottom_rule": True, "source_group_indices": cluster["indices"],
                     "bbox": [left, top[1], right, bottom[1]], "semantic_structure_verified": False}
+                if separated_spacing:
+                    repaired[1]["row_spacing_evidence"] = {
+                        "minimum_record_gap_points": round(min(record_gaps), 3),
+                        "maximum_continuation_gap_points": round(max(continuation_gaps), 3),
+                        "record_start_gaps": len(record_gaps),
+                        "continuation_gaps": len(continuation_gaps)}
                 break
         if repaired:
             cells, note = repaired
