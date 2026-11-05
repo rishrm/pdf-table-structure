@@ -127,9 +127,11 @@ def collapse_text_gaps(table, boxes):
 
 def space_text_boundaries(table, boxes, bounds):
     """Place inferred dividers within observed whitespace, rather than on text."""
+    original_bbox = list(table["bbox"])
+    table_words = boxes_in_table(boxes, original_bbox)
     xs = table["x_boundaries"]
     columns = [[] for _ in range(table["column_count"])]
-    for box in boxes:
+    for box in table_words:
         center = (box[0] + box[2]) / 2
         for index in range(len(columns)):
             if xs[index] <= center <= xs[index + 1]:
@@ -147,6 +149,20 @@ def space_text_boundaries(table, boxes, bounds):
     ys = list(table["y_boundaries"])
     ys[0] = max(bounds[1], ys[0] - 4)
     ys[-1] = min(bounds[3], ys[-1] + 4)
+    # Padding must not turn a neighboring caption/footnote into a table word.
+    # Keep the original edge wherever expansion would admit a new word center;
+    # independent edges and the internal gutter correction remain usable.
+    expanded = [updated[0], ys[0], updated[-1], ys[-1]]
+    for box in boxes_in_table(boxes, expanded):
+        cx, cy = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
+        if cx < original_bbox[0]:
+            updated[0] = original_bbox[0]
+        if cx > original_bbox[2]:
+            updated[-1] = original_bbox[2]
+        if cy < original_bbox[1]:
+            ys[0] = original_bbox[1]
+        if cy > original_bbox[3]:
+            ys[-1] = original_bbox[3]
     table["x_boundaries"], table["y_boundaries"] = updated, ys
     table["bbox"] = [updated[0], ys[0], updated[-1], ys[-1]]
     for cell in table["cells"]:
@@ -367,11 +383,23 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
     diagnostics = {}
     image_cache = {}
 
+    def sample_pixels(candidate_bbox):
+        sampler = image_cache.get("sample_candidate")
+        if sampler is None:
+            return {"status": "unavailable", "reason": "no_image_evidence_sampler"}
+        try:
+            return sampler(candidate_bbox)
+        except MemoryError:
+            raise
+        except Exception as exc:
+            return {"status": "unavailable", "reason": type(exc).__name__}
+
     def ingest(groups, method, transform=None, backend_details=None):
         nonlocal boxes
         attempt = {"method": method, "raw_candidates": len(groups),
                    "accepted": 0, "rejected": []}
         for raw_index, raw in enumerate(groups):
+            candidate_metadata = None
             try:
                 cells = raw.cells if method in ("lines", "text") else raw
                 if len(cells) > 4096:
@@ -398,10 +426,33 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                     boxes = word_boxes_only(region)
                 table_words = boxes_in_table(boxes, candidate["bbox"])
                 collapse_text_gaps(candidate, table_words)
-                space_text_boundaries(candidate, table_words, region.bbox)
+                space_text_boundaries(candidate, boxes, region.bbox)
                 reasons.extend(check_grid(candidate))
                 if candidate["row_count"] < 2 or candidate["column_count"] < 2:
                     reasons.append("single_row_or_column_after_text_normalization")
+            if method == "img2table" and region.chars and backend_details and not reasons:
+                metadata_list = backend_details.get("returned_group_metadata", [])
+                metadata = dict(metadata_list[raw_index]) if raw_index < len(metadata_list) else {}
+                image_reasons, evidence = image_evidence(candidate, metadata,
+                    backend_details.get("horizontal_rules", []), backend_details.get("figure_context"))
+                # Do not let a later normalization erase a measured rejection.
+                reasons.extend(image_reasons)
+                if not reasons and not evidence["long_horizontal_rule_support"] and \
+                        metadata.get("layout_repair", {}).get("status") != "repaired":
+                    if boxes is None:
+                        boxes = word_boxes_only(region)
+                    table_words = boxes_in_table(boxes, candidate["bbox"])
+                    if table_words:
+                        # Both unruled routes use the same word-gap correction;
+                        # image-derived cell boxes must not clip known words.
+                        space_text_boundaries(candidate, boxes, region.bbox)
+                        reasons.extend(check_grid(candidate))
+                        metadata.update(bbox=list(candidate["bbox"]),
+                                        pixel_evidence=sample_pixels(candidate["bbox"]))
+                        candidate["warnings"].append("native_word_boundaries_require_review")
+                # Metadata belongs to this candidate's final geometry, not to
+                # another raw fragment. Keep source provenance in the copy.
+                candidate_metadata = metadata
             if method in ("text", "img2table", "native") and region.chars and not reasons:
                 if boxes is None:
                     boxes = word_boxes_only(region)
@@ -415,14 +466,7 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                 # already applied to inferred image grids. Context is measured
                 # against this candidate, not copied from a rejected fragment.
                 details = diagnostics.get("img2table_detection", {})
-                pixel = {"status": "unavailable", "reason": "no_image_evidence_sampler"}
-                if image_cache.get("sample_candidate") is not None:
-                    try:
-                        pixel = image_cache["sample_candidate"](candidate["bbox"])
-                    except MemoryError:
-                        raise
-                    except Exception as exc:
-                        pixel = {"status": "unavailable", "reason": type(exc).__name__}
+                pixel = sample_pixels(candidate["bbox"])
                 # Native printed rules remain valid even if the optional
                 # image pass fails, returns empty hints, or misses this region.
                 rules = [[e[k] for k in ("x0", "top", "x1", "bottom")]
@@ -434,7 +478,8 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                 reasons.extend(image_reasons)
             if method in ("img2table", "native", "scan_recovery") and backend_details and not reasons:
                 group_metadata = backend_details.get("returned_group_metadata", [])
-                metadata = group_metadata[raw_index] if raw_index < len(group_metadata) else {}
+                metadata = candidate_metadata if candidate_metadata is not None else \
+                    (group_metadata[raw_index] if raw_index < len(group_metadata) else {})
                 if method == "native" and not metadata.get("complete_envelope"):
                     reasons.append("native_envelope_unverified")
                 if metadata.get("layout_repair", {}).get("status") == "repaired":
@@ -535,7 +580,7 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                         item = dict(old_metadata[source_index]) if source_index < len(old_metadata) else {}
                         if note["status"] == "repaired":
                             item.update(bbox=note["bbox"], unique_cells=len(cells), layout_repair=note,
-                                pixel_evidence={"status": "unavailable", "reason": "native_layout_rebuilt_region"})
+                                pixel_evidence=sample_pixels(note["bbox"]))
                         new_metadata.append(item)
                     groups = repaired
                     details["returned_group_metadata"] = new_metadata

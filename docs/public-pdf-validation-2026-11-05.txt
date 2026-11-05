@@ -1,0 +1,81 @@
+Broader public-PDF check - 5 November 2026
+
+Scope and reproducibility
+Tested 16 additional public PDFs (17 pages) from the Camelot and pdfplumber
+test corpora, plus the retained 42-page 967862.pdf regression: 17 PDFs/59 pages.
+Twelve public files were development cases; four were reserved until the code
+was frozen. No tuning followed the reserved evaluation. The source manifests
+pin upstream commits, file paths, Git blob hashes and SHA-256 hashes in
+tests/fixtures/public-pdf-corpus.json. Original PDFs are retained locally in
+work/public-pdfs-nov05/inputs outside the Git repository.
+
+Upstream sources:
+https://github.com/camelot-dev/camelot/tree/92777b852e00933a5c4b9ba642601784604356cd/tests/files
+https://github.com/jsvine/pdfplumber/tree/4c64b92d5caccd71c645e98e0fabb0c4dba7ff45/tests/pdfs
+
+Independent assistant visual annotations were drafted before predictions.
+They are not human-validated ground truth or a representative random sample.
+The reference file is tests/fixtures/public-pdf-reference.json. Two metadata
+regions in the scanned fixture are ambiguous; one returned candidate in those
+regions is reported separately. Three logical row/column interpretations are
+ambiguous and excluded from exact-dimension/checklist denominators. Rotated
+table dimensions follow the PDF coordinate axes, not semantic reading order.
+
+Changes
+- Unruled image candidates containing native words reuse the existing text
+  route's word-gap boundary correction. This fixes clipped outer text without
+  changing the logical row/column/spanning-cell structure.
+- The shared correction caps padding wherever it would admit a neighboring
+  caption/footnote/side-label word center. Internal gutter corrections and
+  independent unconflicted edges can still improve.
+- Changed image geometry is resampled with the existing page render and
+  remaining pixel budget. Word-based repair no longer replaces available
+  pixel evidence with an automatic unavailable status. Raw provenance and
+  sanitized missing-evidence fallback remain intact.
+- No model, dependency, detector, CLI option or output format was added.
+
+Measured results against baseline b2a77d3
+                                  Before     After
+Development table regions         14/14      14/14
+Development exact row/col counts    9/11       9/11
+Development strict recorded checks 7/11       8/11
+Development clear false outputs       0          0
+Reserved table regions              3/3        3/3
+Reserved exact row/col counts        2/3        2/3
+Reserved strict recorded checks     2/3        2/3
+Reserved clear false outputs          1          1
+Combined strict recorded checks    9/14      10/14
+
+The combined 19 outputs comprise 17 true-region matches, one clear false
+output and one ambiguous metadata candidate. Matching a region or row/column
+totals does not establish full cell correctness. The strict checklist checks
+recorded dimensions, bounds and annotated spans; it is not a cell-box benchmark.
+
+Concrete improvement
+camelot-stream_inner_outer_columns retains its 5x6 grid and sparse columns.
+The known-word cut fraction falls from 0.1154 to 0.0 under the existing 0.75pt
+tolerance. Exact font-box containment improves 9/26 to 23/26; three small
+internal-edge overhangs remain within tolerance. The last row and outer header
+are no longer visibly clipped; its outer-bound checklist now passes.
+
+Remaining failures exposed by the broader check
+- missing_values: 42x7 instead of 40x5; redundant painted rectangles and a
+  narrow visual spacer become columns, and the footnote band is included.
+- senate-expenditures: 4x7 instead of 34x7; two large physical body cells hide
+  many logical records. This is not solved by adding another detector pass.
+- NICS: 17x25 instead of 59x25; logical records are merged and footnotes included.
+- Scanned image fixture: 13x6 counts match, but its outer bounds are too tight.
+- SCOTUS cover: one false 25x2 candidate remains. Reserved accuracy did NOT
+  improve; this remains an evaluation failure, not a silently retuned case.
+- Two incomplete-rule Lorem tables and the financial note/section-row
+  convention remain explicitly ambiguous in the reference.
+
+Validation and limits
+210 automated tests pass. The new tests cover exact-bbox resampling, shared
+budgets, graphic rejection, immutable raw metadata, source provenance, spans,
+small/ruled/image-only cases, neighboring text and fail-open error handling.
+The 42-page 967862 regression still returns exactly its two correct grids
+(21x3 and 24x4), with identical geometry and zero false outputs.
+All source hashes and the code freeze were verified. This was not a controlled
+speed, memory, energy or low-power-device benchmark. The pipeline still exports
+structure and overlays; it does not rewrite or accessibility-tag the PDFs.

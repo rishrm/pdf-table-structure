@@ -1,0 +1,1287 @@
+{
+  "annotation_note": "Independent assistant visual references created before predictions; not human-validated gold truth. Reserved files were first evaluated after implementation freeze; no retuning followed. Ambiguous counts are null and excluded from exact-dimension denominators. Source PDFs are pinned by tests/fixtures/public-pdf-corpus.json and stored locally outside Git.",
+  "documents": [
+    {
+      "filename": "camelot-clockwise_table_1.pdf",
+      "input_sha256": "72e1472878305b75d1d936a20b7a189a5bbd60bc659a64ab1da2c75b053d4a17",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "table_pages": [
+        1
+      ],
+      "tables": [
+        {
+          "id": "camelot-clockwise_table_1-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            235.743,
+            58.42,
+            529.696,
+            737.176
+          ],
+          "logical_rows": 10,
+          "logical_columns": 13,
+          "table_kind": "rotated_ruled_table",
+          "table_presence_confidence": "high",
+          "bbox_confidence": "native_borders_plus_visual",
+          "structural_scoring_eligible": true,
+          "cell_bbox_ground_truth_available": false,
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 11,
+              "rowspan": 1,
+              "colspan": 2
+            },
+            {
+              "row": 1,
+              "column": 12,
+              "rowspan": 4,
+              "colspan": 1
+            },
+            {
+              "row": 5,
+              "column": 11,
+              "rowspan": 1,
+              "colspan": 2
+            },
+            {
+              "row": 6,
+              "column": 12,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 8,
+              "column": 12,
+              "rowspan": 2,
+              "colspan": 1
+            }
+          ],
+          "required_body_spans": [],
+          "ambiguities": [
+            "Rows and columns are scored in the exported PDF coordinate axes:10 horizontal y-bands x13 vertical x-bands. Rotating the visible content upright gives13 logical reading rows x10 reading columns (2headers+11body includingPooled).",
+            "The page rotation metadata is180, but the table text is visibly clockwise90 after PDF rotation is applied. Caption and Data not available footnote are excluded.",
+            "Span coordinates are transformed into the physical PDF grid orientation; no semantic text-orientation normalization is assumed."
+          ],
+          "upright_reading_rows": 13,
+          "upright_reading_columns": 10,
+          "coordinate_dimension_policy": "Physical PDF x/y grid after applying page rotation, matching exported row/column axes."
+        }
+      ],
+      "ambiguous_regions": [],
+      "negative_pages": [],
+      "page_geometry": [
+        {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            612,
+            792
+          ],
+          "rotation": 180,
+          "characters": 1018,
+          "lines": 0,
+          "rects": 413
+        }
+      ],
+      "classification_notes": [
+        "One rotated data table; page caption/footnote excluded."
+      ],
+      "evaluation_cohort": "reserved"
+    },
+    {
+      "filename": "camelot-column_span_2.pdf",
+      "input_sha256": "14290fe5c01ad98b9362906b0c9646756ebf2999a82aaaeefc4dcecff5d3726f",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "selectable_character_count": 2004,
+      "table_pages": [
+        1
+      ],
+      "negative_pages": [],
+      "tables": [
+        {
+          "id": "camelot-column_span_2-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            79.5,
+            90.96,
+            532.5,
+            337.75
+          ],
+          "logical_rows": 11,
+          "logical_columns": 7,
+          "table_kind": "fully_ruled_mixed_spans",
+          "required_header_spans": [],
+          "required_body_spans": [
+            {
+              "row": 1,
+              "column": 1,
+              "rowspan": 3,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 2,
+              "rowspan": 3,
+              "colspan": 5
+            },
+            {
+              "row": 4,
+              "column": 2,
+              "rowspan": 1,
+              "colspan": 5
+            },
+            {
+              "row": 5,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 5,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 5,
+              "column": 3,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 5,
+              "column": 4,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 5,
+              "column": 5,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 7,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 7,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 7,
+              "column": 3,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 7,
+              "column": 4,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 7,
+              "column": 5,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 9,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            }
+          ],
+          "structural_scoring_eligible": true,
+          "table_presence_confidence": "high",
+          "row_count_confidence": "high",
+          "column_count_confidence": "high",
+          "bbox_confidence": "native_geometry_plus_visual",
+          "cell_bbox_ground_truth_available": false,
+          "ambiguities": [
+            "One wrapped header row plus ten leaf body rows. Gender pairs are separate rows; top three investigation labels are separate rows sharing their other fields. Footnotes below box excluded."
+          ],
+          "expected_spanning_cells": [
+            {
+              "row": 1,
+              "column": 1,
+              "rowspan": 3,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 2,
+              "rowspan": 3,
+              "colspan": 5
+            },
+            {
+              "row": 4,
+              "column": 2,
+              "rowspan": 1,
+              "colspan": 5
+            },
+            {
+              "row": 5,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 5,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 5,
+              "column": 3,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 5,
+              "column": 4,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 5,
+              "column": 5,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 7,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 7,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 7,
+              "column": 3,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 7,
+              "column": 4,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 7,
+              "column": 5,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 9,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            }
+          ]
+        }
+      ],
+      "ambiguous_regions": [],
+      "classification_notes": [],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-edge_tol.pdf",
+      "input_sha256": "7cc0473fbee0617bf30e5556dc25e0938690ac98bf252dddaa99923fb90a7ef1",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "selectable_character_count": 1068,
+      "table_pages": [
+        1
+      ],
+      "tables": [
+        {
+          "id": "edge-tol-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            69.5,
+            140.06,
+            543.21,
+            603.34
+          ],
+          "logical_rows": null,
+          "logical_columns": 2,
+          "table_kind": "partially_ruled_financial_summary",
+          "structural_scoring_eligible": false,
+          "table_presence_confidence": "high",
+          "column_count_confidence": "high",
+          "row_count_confidence": "ambiguous",
+          "cell_bbox_ground_truth_available": false,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "ambiguities": [
+            "One two-column financial table extends from the year-header top rule through the last numeric underline.",
+            "There are23visible text row bands when the year header, internal currency note and five section-heading bands are counted. Excluding the currency note yields22. Exact row count is therefore unscored; preferred convention23.",
+            "Blank vertical spacing is not an empty data row. The last two sections have closely spaced records; their subtotal/total lines belong in the table.",
+            "The main title and running header above the table, and both explanatory footnotes plus page number below it, are excluded.",
+            "Section labels may occupy the first column with an empty second cell or be represented as full-width spans; no required span set asserted."
+          ],
+          "bbox_confidence": "native_top_rule_and_terminal_numeric_rule",
+          "preferred_logical_rows": 23,
+          "row_count_range": [
+            22,
+            23
+          ]
+        }
+      ],
+      "negative_pages": [],
+      "ambiguous_regions": [],
+      "classification_notes": [
+        "The broad white gaps separate sections of one financial table. Explanatory footnotes at the bottom are prose, not another table."
+      ],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-foo.pdf",
+      "input_sha256": "7d6c24e45b38375e322419281cee1335ddb97e00fc86abe9f22afcd8b42e6d82",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "selectable_character_count": 2689,
+      "table_pages": [
+        1
+      ],
+      "negative_pages": [],
+      "tables": [
+        {
+          "id": "camelot-foo-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            120.48,
+            558.06,
+            491.46,
+            674.58
+          ],
+          "logical_rows": 7,
+          "logical_columns": 7,
+          "table_kind": "fully_ruled_grouped_header",
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 2,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 4
+            }
+          ],
+          "required_body_spans": [],
+          "structural_scoring_eligible": true,
+          "table_presence_confidence": "high",
+          "row_count_confidence": "high",
+          "column_count_confidence": "high",
+          "bbox_confidence": "native_geometry_plus_visual",
+          "cell_bbox_ground_truth_available": false,
+          "ambiguities": [
+            "Two header tiers plus five data records. Caption and surrounding prose excluded."
+          ],
+          "expected_spanning_cells": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 2,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 4
+            }
+          ]
+        }
+      ],
+      "ambiguous_regions": [],
+      "classification_notes": [],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-image.pdf",
+      "input_sha256": "0321b83f298e2e8fa41edeff5284f66366d5fe573dbebadd726f48330dcb7bee",
+      "page_count": 1,
+      "input_type": "image_only_scan",
+      "selectable_character_count": 0,
+      "table_pages": [
+        1
+      ],
+      "negative_pages": [],
+      "tables": [
+        {
+          "id": "camelot-image-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            298.0,
+            340.0,
+            587.5,
+            541.0
+          ],
+          "logical_rows": 13,
+          "logical_columns": 6,
+          "table_kind": "scanned_partially_ruled_numeric",
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "structural_scoring_eligible": true,
+          "table_presence_confidence": "high",
+          "row_count_confidence": "high",
+          "column_count_confidence": "high",
+          "bbox_confidence": "approximate_visual",
+          "cell_bbox_ground_truth_available": false,
+          "ambiguities": [
+            "One multiline header row plus twelve records: L Arm, R Arm, L Ribs, R Ribs, T Spine, L Spine, Pelvis, L Leg, R Leg, Subtotal, Head and Total.",
+            "Six columns include T-score and Z-score despite almost entirely empty entries. Header words wrap but remain one row. Caption and BMD footnote outside border excluded.",
+            "Printed border is slightly skewed; reference is an enclosing approximate rectangle."
+          ],
+          "expected_spanning_cells": []
+        }
+      ],
+      "ambiguous_regions": [
+        {
+          "id": "camelot-image-p1-metadata-form",
+          "page": 1,
+          "bbox_points": [
+            10,
+            83,
+            593,
+            139
+          ],
+          "reason": "Single bordered demographic form with three field groups but no explicit internal cell boundaries; form-versus-table is ambiguous."
+        },
+        {
+          "id": "camelot-image-p1-scan-information",
+          "page": 1,
+          "bbox_points": [
+            296,
+            159,
+            582,
+            272
+          ],
+          "reason": "Unruled scan metadata label/value block; form-versus-table classification ambiguous."
+        }
+      ],
+      "classification_notes": [
+        "Radiographic image and age plot are figures, not tables. Metadata form blocks are separately flagged ambiguous rather than forced into data-table truth."
+      ],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-missing_values.pdf",
+      "input_sha256": "e7bc3e24b4aa859ca9aab91aa67fbabdf682719ac2ef4447e7317ba7aac1d009",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "selectable_character_count": 5014,
+      "table_pages": [
+        1
+      ],
+      "negative_pages": [],
+      "tables": [
+        {
+          "id": "camelot-missing_values-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            71.1,
+            72.0,
+            540.5,
+            531.7
+          ],
+          "logical_rows": 40,
+          "logical_columns": 5,
+          "table_kind": "shaded_missing_values",
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 1,
+              "rowspan": 1,
+              "colspan": 2
+            },
+            {
+              "row": 0,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 2
+            }
+          ],
+          "required_body_spans": [
+            {
+              "row": 2,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 5
+            },
+            {
+              "row": 6,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 5
+            },
+            {
+              "row": 10,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 5
+            },
+            {
+              "row": 33,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 5
+            },
+            {
+              "row": 36,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 5
+            }
+          ],
+          "structural_scoring_eligible": true,
+          "table_presence_confidence": "high",
+          "row_count_confidence": "high",
+          "column_count_confidence": "high",
+          "bbox_confidence": "native_geometry_plus_visual",
+          "cell_bbox_ground_truth_available": false,
+          "ambiguities": [
+            "Two header tiers, five section rows and 33 data rows: 3 morbidity, 3 chronic prevalence, 22 anaemia, 2 blood sugar, 3 hypertension.",
+            "All five columns retained, including the two almost entirely empty DLHS-3 fields. Dark blank shading is missing data, not permission to drop columns.",
+            "Title above box and two-line explanatory footnote band below y531.7 excluded. Section rows are treated as full-width logical headings; blank-field rowspan topology is not exhaustively annotated."
+          ]
+        }
+      ],
+      "ambiguous_regions": [],
+      "classification_notes": [],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-multiple_tables.pdf",
+      "input_sha256": "9ac99cf86d3dd9b8e3773b773b942ec784c9e4b6e36febe1637767468e96526a",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "selectable_character_count": 409,
+      "table_pages": [
+        1
+      ],
+      "negative_pages": [],
+      "tables": [
+        {
+          "id": "camelot-multiple_tables-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            72.24,
+            72.24,
+            539.85,
+            169.82
+          ],
+          "logical_rows": 7,
+          "logical_columns": 4,
+          "table_kind": "fully_ruled_multiple_tables",
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "structural_scoring_eligible": true,
+          "table_presence_confidence": "high",
+          "row_count_confidence": "high",
+          "column_count_confidence": "high",
+          "bbox_confidence": "native_geometry_plus_visual",
+          "cell_bbox_ground_truth_available": false,
+          "ambiguities": [
+            "Seven physical data rows, four columns. No semantic header classification; all rows counted."
+          ],
+          "expected_spanning_cells": []
+        },
+        {
+          "id": "camelot-multiple_tables-p1-t2",
+          "page": 1,
+          "bbox_points": [
+            72.24,
+            244.22,
+            539.85,
+            286.01
+          ],
+          "logical_rows": 3,
+          "logical_columns": 3,
+          "table_kind": "fully_ruled_multiple_tables",
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "structural_scoring_eligible": true,
+          "table_presence_confidence": "high",
+          "row_count_confidence": "high",
+          "column_count_confidence": "high",
+          "bbox_confidence": "native_geometry_plus_visual",
+          "cell_bbox_ground_truth_available": false,
+          "ambiguities": [
+            "Three physical rows, three columns. Paragraph between the two tables is excluded."
+          ],
+          "expected_spanning_cells": []
+        }
+      ],
+      "ambiguous_regions": [],
+      "classification_notes": [
+        "Two distinct fully ruled tables separated by ordinary prose; do not merge them into one page grid."
+      ],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-only_page_number.pdf",
+      "input_sha256": "dc15f08d676d2f6710b2d53e1ec0461dd4cfb61211f89e8ee5ebc663a1dcf627",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "selectable_character_count": 6,
+      "table_pages": [],
+      "tables": [],
+      "negative_pages": [
+        1
+      ],
+      "ambiguous_regions": [],
+      "classification_notes": [
+        "A blank landscape page with a single page number; zero tables."
+      ],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-population_growth.pdf",
+      "input_sha256": "da9aeb8364208cdea042f08321aa9b87f7d5d36a69571faf161930e6f7518f7b",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "table_pages": [
+        1
+      ],
+      "tables": [
+        {
+          "id": "camelot-population_growth-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            96.378,
+            96.194,
+            611.534,
+            673.115
+          ],
+          "logical_rows": 37,
+          "logical_columns": 7,
+          "table_kind": "partially_ruled_numeric_table",
+          "table_presence_confidence": "high",
+          "bbox_confidence": "native_borders_plus_visual",
+          "structural_scoring_eligible": true,
+          "cell_bbox_ground_truth_available": false,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "ambiguities": [
+            "One column-header row plus35 state/territory records and one ALL INDIA summary record. Title, unit label above top rule, and source/availability notes below bottom rule are excluded.",
+            "The PDF cropbox begins at(49.6063,43.937); annotations are absolute pdfplumber page points, not zero-origin screenshot coordinates."
+          ],
+          "header_rows": 1,
+          "body_rows": 36,
+          "expected_spanning_cells": []
+        }
+      ],
+      "ambiguous_regions": [],
+      "negative_pages": [],
+      "page_geometry": [
+        {
+          "page": 1,
+          "bbox": [
+            0,
+            0.0,
+            708.661,
+            878.74
+          ],
+          "rotation": 0,
+          "characters": 1694,
+          "lines": 16,
+          "rects": 0
+        }
+      ],
+      "classification_notes": [
+        "All page content visually screened."
+      ],
+      "evaluation_cohort": "reserved"
+    },
+    {
+      "filename": "camelot-row_span_2.pdf",
+      "input_sha256": "6845bf6cca560534204cc58e1462d7b68987330fae79593df024f75c0103cfec",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "selectable_character_count": 2950,
+      "table_pages": [
+        1
+      ],
+      "negative_pages": [],
+      "tables": [
+        {
+          "id": "camelot-row_span_2-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            24.48,
+            26.2,
+            819.36,
+            519.88
+          ],
+          "logical_rows": 7,
+          "logical_columns": 10,
+          "table_kind": "fully_ruled_row_spans",
+          "required_header_spans": [],
+          "required_body_spans": [
+            {
+              "row": 4,
+              "column": 0,
+              "rowspan": 3,
+              "colspan": 1
+            },
+            {
+              "row": 4,
+              "column": 1,
+              "rowspan": 3,
+              "colspan": 1
+            }
+          ],
+          "structural_scoring_eligible": true,
+          "table_presence_confidence": "high",
+          "row_count_confidence": "high",
+          "column_count_confidence": "high",
+          "bbox_confidence": "native_geometry_plus_visual",
+          "cell_bbox_ground_truth_available": false,
+          "ambiguities": [
+            "One wrapped header row plus six outbreak records. The last three share serial number and state, each spanning three rows. District boundaries are faint but present: West Medinipur, Birbhum and Howrah remain separate rows."
+          ],
+          "expected_spanning_cells": [
+            {
+              "row": 4,
+              "column": 0,
+              "rowspan": 3,
+              "colspan": 1
+            },
+            {
+              "row": 4,
+              "column": 1,
+              "rowspan": 3,
+              "colspan": 1
+            }
+          ]
+        }
+      ],
+      "ambiguous_regions": [],
+      "classification_notes": [],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-stream_inner_outer_columns.pdf",
+      "input_sha256": "c1b275fa317d166038d1c9ac3525283a3c6ef25837a079e6ea34d47ec2b2ed02",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "selectable_character_count": 98,
+      "table_pages": [
+        1
+      ],
+      "tables": [
+        {
+          "id": "stream-inner-outer-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            85.4,
+            70.7,
+            506.8,
+            149.2
+          ],
+          "logical_rows": 5,
+          "logical_columns": 6,
+          "table_kind": "borderless_sparse_columns",
+          "structural_scoring_eligible": true,
+          "table_presence_confidence": "high",
+          "column_count_confidence": "high",
+          "row_count_confidence": "high",
+          "cell_bbox_ground_truth_available": false,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "ambiguities": [
+            "One header row and four aligned data rows. Three columns have entries only in the first data row; the later missing entries are empty cells, not grounds to delete the columns.",
+            "No printed border establishes exact outer edges; bbox is the visible table content envelope with approximately four-point padding.",
+            "Merged versus blank representations of sparse columns are not strictly scored; no required spans asserted."
+          ],
+          "bbox_confidence": "approximate_text_envelope"
+        }
+      ],
+      "negative_pages": [],
+      "ambiguous_regions": [],
+      "classification_notes": [
+        "The compact six-column layout at the top is the only table. The rest of the page is blank."
+      ],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-table_region.pdf",
+      "input_sha256": "d320aa29f8a2470b049f3b56af86bad0e6c34ac56d8386ae9dd92976e4c5828d",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "selectable_character_count": 2035,
+      "table_pages": [
+        1
+      ],
+      "tables": [
+        {
+          "id": "table-region-p1-outer",
+          "page": 1,
+          "bbox_points": [
+            28.85,
+            28.85,
+            565.85,
+            784.36
+          ],
+          "logical_rows": 7,
+          "logical_columns": 2,
+          "table_kind": "ruled_nested_outer",
+          "structural_scoring_eligible": true,
+          "table_presence_confidence": "high",
+          "column_count_confidence": "high",
+          "row_count_confidence": "high",
+          "cell_bbox_ground_truth_available": false,
+          "required_header_spans": [],
+          "required_body_spans": [
+            {
+              "row": 3,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 2
+            }
+          ],
+          "ambiguities": [
+            "Seven physical outer row bands: three label/value rows, one full-width section heading, one large label/value row containing a separate subtable, then two final label/value rows.",
+            "The inner table is counted separately. Its internal lines must not add rows or columns to the outer logical grid.",
+            "All multiline paragraphs stay within their outer cells. Footer and printed page number below the bottom rule are excluded."
+          ],
+          "bbox_confidence": "native_printed_rules",
+          "expected_spanning_cells": [
+            {
+              "row": 3,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 2
+            }
+          ],
+          "nested_table_ids": [
+            "table-region-p1-inner"
+          ]
+        },
+        {
+          "id": "table-region-p1-inner",
+          "page": 1,
+          "bbox_points": [
+            178.88,
+            483.68,
+            478.93,
+            560.1
+          ],
+          "logical_rows": 4,
+          "logical_columns": 2,
+          "table_kind": "ruled_nested_inner",
+          "structural_scoring_eligible": true,
+          "table_presence_confidence": "high",
+          "column_count_confidence": "high",
+          "row_count_confidence": "high",
+          "cell_bbox_ground_truth_available": false,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "ambiguities": [
+            "One two-line column-header row and three numeric data rows. The prose above and below the nested ruled box is excluded.",
+            "This table lies inside the right cell of outer row4 (zero-based). It is a separate four-row table, not an extension of the outer grid."
+          ],
+          "bbox_confidence": "native_printed_rules",
+          "expected_spanning_cells": [],
+          "parent_table_id": "table-region-p1-outer"
+        }
+      ],
+      "negative_pages": [],
+      "ambiguous_regions": [],
+      "classification_notes": [
+        "Two genuine table instances are nested. The large label/value form is included consistently with earlier ruled metadata-card annotations. Nested matching uses separate outer/inner reference boxes."
+      ],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "pdfplumber-issue-33-lorem-ipsum.pdf",
+      "input_sha256": "951e9ab1d5ec310429f89173357a7c9f84b08153fd7f81b5d060ed2487869f16",
+      "page_count": 2,
+      "input_type": "selectable_text",
+      "table_pages": [
+        1,
+        2
+      ],
+      "tables": [
+        {
+          "id": "pdfplumber-issue-33-lorem-ipsum-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            109.268,
+            28.546,
+            583.654,
+            322.643
+          ],
+          "logical_rows": 18,
+          "logical_columns": null,
+          "table_kind": "ruled_text_table_with_missing_dividers",
+          "table_presence_confidence": "high",
+          "bbox_confidence": "native_borders_plus_visual",
+          "structural_scoring_eligible": false,
+          "cell_bbox_ground_truth_available": false,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "ambiguities": [
+            "There are 18 clearly ruled row bands; wrapped text inside a band does not add rows.",
+            "Seven repeated aligned textual fields are visually apparent, but two full-height vertical dividers are absent, leaving only five printed-grid columns. Seven logical fields versus five wider composite cells is ambiguous without source semantics; exact column and joint-dimension scoring is excluded.",
+            "Preferred logical interpretation is 18x7. Printed border-only interpretation is 18x5. Surrounding paragraphs and headings are not tables."
+          ],
+          "preferred_logical_columns": 7,
+          "column_count_range": [
+            5,
+            7
+          ],
+          "row_count_confidence": "high",
+          "column_count_confidence": "ambiguous"
+        },
+        {
+          "id": "pdfplumber-issue-33-lorem-ipsum-p2-t1",
+          "page": 2,
+          "bbox_points": [
+            246.667,
+            28.546,
+            365.333,
+            250.513
+          ],
+          "logical_rows": null,
+          "logical_columns": 4,
+          "table_kind": "ruled_numeric_table_with_missing_divider",
+          "table_presence_confidence": "high",
+          "bbox_confidence": "native_borders_plus_visual",
+          "structural_scoring_eligible": false,
+          "cell_bbox_ground_truth_available": false,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "ambiguities": [
+            "There are 18 aligned rows of four numeric values, but the horizontal rule between the tenth and eleventh numeric lines is absent, leaving 17 printed-grid bands.",
+            "Preferred logical interpretation is 18x4; a border-only interpretation groups the two unseparated numeric lines into one row and gives 17x4. Exact rows and joint dimensions are excluded because the source contains no labels resolving this convention.",
+            "The numeric table has no column-header row. Prose below it is outside the table."
+          ],
+          "preferred_logical_rows": 18,
+          "row_count_range": [
+            17,
+            18
+          ],
+          "row_count_confidence": "ambiguous",
+          "column_count_confidence": "high"
+        }
+      ],
+      "ambiguous_regions": [],
+      "negative_pages": [],
+      "page_geometry": [
+        {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            612,
+            792
+          ],
+          "rotation": 0,
+          "characters": 2559,
+          "lines": 163,
+          "rects": 0
+        },
+        {
+          "page": 2,
+          "bbox": [
+            0,
+            0,
+            612,
+            792
+          ],
+          "rotation": 0,
+          "characters": 991,
+          "lines": 108,
+          "rects": 0
+        }
+      ],
+      "classification_notes": [
+        "Both pages contain real tables; this document is not a negative control. Missing dividers create interpretation uncertainty explicitly excluded from exact-dimension scoring."
+      ],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "pdfplumber-nics-background-checks-2015-11.pdf",
+      "input_sha256": "4f0ae6e017b0e97de211da8fd97316e55bd927af5740d6ce95e1b7b1539f9407",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "table_pages": [
+        1
+      ],
+      "tables": [
+        {
+          "id": "pdfplumber-nics-background-checks-2015-11-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            32.88,
+            23.76,
+            975.36,
+            482.83
+          ],
+          "logical_rows": 59,
+          "logical_columns": 25,
+          "table_kind": "dense_partially_ruled_grouped_header_table",
+          "table_presence_confidence": "high",
+          "bbox_confidence": "native_borders_plus_visual",
+          "structural_scoring_eligible": true,
+          "cell_bbox_ground_truth_available": false,
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 25
+            },
+            {
+              "row": 1,
+              "column": 7,
+              "rowspan": 1,
+              "colspan": 3
+            },
+            {
+              "row": 1,
+              "column": 10,
+              "rowspan": 1,
+              "colspan": 3
+            },
+            {
+              "row": 1,
+              "column": 13,
+              "rowspan": 1,
+              "colspan": 3
+            },
+            {
+              "row": 1,
+              "column": 16,
+              "rowspan": 1,
+              "colspan": 2
+            },
+            {
+              "row": 1,
+              "column": 18,
+              "rowspan": 1,
+              "colspan": 3
+            },
+            {
+              "row": 1,
+              "column": 21,
+              "rowspan": 1,
+              "colspan": 3
+            }
+          ],
+          "required_body_spans": [],
+          "ambiguities": [
+            "One internal full-width title row (two text lines), two header tiers,55 jurisdiction records and one Totals record:59 rows. Internal title is included because it is inside the same printed outer enclosure, consistent with internal-heading policy.",
+            "The two Rentals columns are blank throughout jurisdiction body rows but remain real columns. Total logical width is25 columns including State/Territory and Totals.",
+            "Printed body separators occur after groups of five jurisdictions; each named jurisdiction is still a separate logical record.",
+            "Footnote/disclaimer boxes below y482.83 are not part of the data table. Header blank-cell merging outside the explicitly listed required spans is not exhaustively scored."
+          ],
+          "header_rows": 3,
+          "body_rows": 56
+        }
+      ],
+      "ambiguous_regions": [],
+      "negative_pages": [],
+      "page_geometry": [
+        {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            1008,
+            612
+          ],
+          "rotation": 0,
+          "characters": 4319,
+          "lines": 192,
+          "rects": 254
+        }
+      ],
+      "classification_notes": [
+        "One data table with grouped headers and internal title; notes/disclaimers are prose."
+      ],
+      "evaluation_cohort": "reserved"
+    },
+    {
+      "filename": "pdfplumber-scotus-transcript-p1.pdf",
+      "input_sha256": "c63508c7b195e6b6c398311fb1f3a36de31f604e3ae94b486a6776f1f144b379",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "table_pages": [],
+      "tables": [],
+      "ambiguous_regions": [],
+      "negative_pages": [
+        1
+      ],
+      "page_geometry": [
+        {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            612,
+            792
+          ],
+          "rotation": 0,
+          "characters": 723,
+          "lines": 1,
+          "rects": 0
+        }
+      ],
+      "classification_notes": [
+        "Supreme Court transcript cover page. Line numbers, case caption and appearance details are prose/form layout, not repeated-record tables. Entire page is a negative control."
+      ],
+      "evaluation_cohort": "reserved"
+    },
+    {
+      "filename": "pdfplumber-senate-expenditures.pdf",
+      "input_sha256": "16921f0fc9b2c6039b23b694e0317917118ad7dd2b3a95a88518b7e144df527c",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "table_pages": [
+        1
+      ],
+      "tables": [
+        {
+          "id": "pdfplumber-senate-expenditures-p1-t1",
+          "page": 1,
+          "bbox_points": [
+            69.966,
+            98.74,
+            711.952,
+            509.472
+          ],
+          "logical_rows": 34,
+          "logical_columns": 7,
+          "table_kind": "partially_ruled_wrapped_record_table",
+          "table_presence_confidence": "high",
+          "bbox_confidence": "native_borders_plus_visual",
+          "structural_scoring_eligible": true,
+          "cell_bbox_ground_truth_available": false,
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 2,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 2
+            },
+            {
+              "row": 0,
+              "column": 5,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 6,
+              "rowspan": 2,
+              "colspan": 1
+            }
+          ],
+          "required_body_spans": [],
+          "ambiguities": [
+            "Two header tiers plus 10 salary/person records and 22 expense records. Wrapped descriptions remain in their expense record.",
+            "Blank document/date fields in salary records remain empty cells, not absent columns. The whole visible header/body enclosure is one table.",
+            "Physical PDF page is landscape after rotation=90; absolute pdfplumber origin is (0,0). Sideways page label B-1191 is excluded."
+          ],
+          "header_rows": 2,
+          "body_rows": 32
+        }
+      ],
+      "ambiguous_regions": [],
+      "negative_pages": [],
+      "page_geometry": [
+        {
+          "page": 1,
+          "bbox": [
+            0,
+            0,
+            792,
+            612
+          ],
+          "rotation": 90,
+          "characters": 3880,
+          "lines": 24,
+          "rects": 2
+        }
+      ],
+      "classification_notes": [
+        "Entire PDF visually inspected at130dpi and source text/rules inspected for record counts."
+      ],
+      "evaluation_cohort": "development"
+    }
+  ]
+}
