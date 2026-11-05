@@ -183,6 +183,9 @@ def text_evidence(table, boxes, region_bbox):
     """Conservative geometry checks, without inspecting word meanings."""
     words = boxes_in_table(boxes, table["bbox"])
     counts = {cell["id"]: 0 for cell in table["cells"]}
+    cell_words = {cell["id"]: [] for cell in table["cells"]}
+    divider_rows = [set() for _ in range(table["column_count"] - 1)]
+    divider_cuts = [set() for _ in divider_rows]
     cuts = 0
     for word in words:
         cx, cy = (word[0] + word[2]) / 2, (word[1] + word[3]) / 2
@@ -193,7 +196,18 @@ def text_evidence(table, boxes, region_bbox):
             cuts += 1
             continue
         counts[cell["id"]] += 1
+        cell_words[cell["id"]].append(word)
         b = cell["bbox"]
+        # Score each real cell edge separately. A wide grid must not dilute
+        # a divider that repeatedly cuts words; merged-cell interiors are not
+        # dividers and do not contribute crossings.
+        for edge, crossed in (
+                (cell["column"], word[0] < b[0] - .75),
+                (cell["column"] + cell["column_span"], word[2] > b[2] + .75)):
+            if 0 < edge < table["column_count"]:
+                divider_rows[edge - 1].add(cell["row"])
+                if crossed:
+                    divider_cuts[edge - 1].add(cell["row"])
         if word[0] < b[0] - 0.75 or word[2] > b[2] + 0.75 or \
                 word[1] < b[1] - 0.75 or word[3] > b[3] + 0.75:
             cuts += 1
@@ -210,12 +224,55 @@ def text_evidence(table, boxes, region_bbox):
     heavy_columns = [i for i, value in enumerate(column_medians) if value >= 8 and
         table["x_boundaries"][i + 1] - table["x_boundaries"][i] >= 0.3 * table_width]
     evidence["column_word_medians"] = column_medians
+    word_height = statistics.median(w[3] - w[1] for w in words) if words else 0
+    def aligned_fraction(values):
+        ordered = sorted(values)
+        best = first = 0
+        for last, value in enumerate(ordered):
+            while value - ordered[first] > max(.75, .1 * word_height):
+                first += 1
+            best = max(best, last - first + 1)
+        return best / len(ordered) if ordered else 0
+
+    column_extents, column_alignment, column_start_alignment = [], [], []
+    for column in range(table["column_count"]):
+        entries = [cell_words[c["id"]] for c in table["cells"] if
+                   c["column"] == column and c["column_span"] == 1 and cell_words[c["id"]]]
+        column_extents.append([w for entry in entries for w in entry])
+        extents = [(min(w[0] for w in entry), max(w[2] for w in entry)) for entry in entries]
+        left_alignment = aligned_fraction(a for a, _ in extents)
+        column_start_alignment.append(left_alignment)
+        column_alignment.append(max(left_alignment,
+            aligned_fraction(b for _, b in extents),
+            aligned_fraction((a + b) / 2 for a, b in extents)))
+    evidence["column_start_alignment"] = [round(v, 4) for v in column_start_alignment]
+    evidence["column_field_alignment"] = [round(v, 4) for v in column_alignment]
+    narrow_prose_gutters = []
+    for column, (left, right) in enumerate(zip(column_extents, column_extents[1:]), 1):
+        if not left or not right:
+            continue
+        gutter = min(w[0] for w in right) - max(w[2] for w in left)
+        # A normal interword space, wordy cells on both sides and a field with
+        # no stable left/right/center alignment together indicate flowing prose.
+        # Compact numeric fields or consistently aligned text fields are kept.
+        if table["row_count"] >= 4 and 0 <= gutter < .5 * word_height and \
+                min(column_medians[column - 1:column + 1]) >= 3 and \
+                min(column_alignment[column - 1:column + 1]) < .75:
+            narrow_prose_gutters.append({"column_boundary": column,
+                                        "gap_points": round(gutter, 3)})
+    evidence["narrow_prose_gutters"] = narrow_prose_gutters
+    evidence["divider_word_crossings"] = [{"column_boundary": i + 1,
+        "observed_rows": len(rows), "cut_rows": len(divider_cuts[i])}
+        for i, rows in enumerate(divider_rows)]
     evidence["long_prose_column_beside_short_cells"] = bool(
         table["row_count"] >= 4 and table["column_count"] <= 5 and heavy_columns and
         any(0 < value <= 3 for i, value in enumerate(column_medians) if i not in heavy_columns))
     reasons = []
     if words and evidence["word_cut_fraction"] > 0.18:
         reasons.append("inferred_boundaries_cut_words")
+    if any(len(cut) >= 3 and len(cut) >= .5 * len(rows)
+           for cut, rows in zip(divider_cuts, divider_rows)):
+        reasons.append("column_divider_repeatedly_cuts_words")
     region_height = region_bbox[3] - region_bbox[1]
     if table["column_count"] <= 4 and table["row_count"] >= 8 and \
             table["bbox"][3] - table["bbox"][1] > 0.25 * region_height and \
@@ -276,14 +333,20 @@ def image_evidence(table, metadata, horizontal_rules, figure_context=None, *,
         pixel["diagram_context"] = context_evidence(table["bbox"], figure_context)
     b = table["bbox"]
     width = b[2] - b[0]
+    # Use the same physical minimum as pixel-rule removal. A ruling must
+    # belong to this candidate, rather than a nearby header/axis or tiny
+    # image texture; partial tables still permit modest border overhang.
     rule_support = any(
+        12 <= rule[2] - rule[0] <= 1.5 * width and
         min(b[2], rule[2]) - max(b[0], rule[0]) >= 0.75 * width and
-        b[1] - 16 <= (rule[1] + rule[3]) / 2 <= b[3] + 3
+        b[1] - 2 <= (rule[1] + rule[3]) / 2 <= b[3] + 2
         for rule in horizontal_rules)
     evidence = {"long_horizontal_rule_support": rule_support, "pixel": pixel}
     reasons = figure_evidence_reasons(pixel)
     if table.get("evidence", {}).get("long_prose_column_beside_short_cells") and not rule_support:
         reasons.append("unruled_layout_includes_long_prose_column")
+    if table.get("evidence", {}).get("narrow_prose_gutters") and not rule_support:
+        reasons.append("unruled_columns_split_flowing_prose")
     if pixel.get("status") == "ok":
         if pixel.get("large_component_ink_fraction", 0) > 0.55 and \
                 pixel.get("character_component_ink_fraction", 0) < 0.35:

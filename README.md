@@ -73,6 +73,8 @@ Page context also detects networks of separated boxes linked by thin ink bridges
 
 The automatic text fallback now also applies the existing mixed-image, figure and long-prose checks. It samples its own candidate bounds using the preceding img2table render and remaining pixel budget; rejected image fragments do not supply replacement pixel statistics for a different region. This prevents text alignment from bypassing available figure evidence without rendering the page again. Native printed rules still support text candidates when optional image hints are missing. Missing or partial pixel evidence remains advisory, and the image-only minimum-row rule is not imposed on text candidates. Explicit `--strategy text` uses word geometry and native rules; it does not run the image backend or obtain its pixel sampler.
 
+Inferred column dividers are also checked individually: repeated word cuts cannot be hidden by averaging across many unrelated columns, and merged-cell interiors are excluded. Unruled grids receive a prose check when wordy fields are separated by ordinary word-sized gaps and at least one field lacks consistent left, right or center alignment. Compact numeric and aligned multiword fields remain supported. Ruling evidence must lie within the candidate's vertical extent (with two-point tolerance), span at least 75% of its width, measure at least 12 points, and be no more than 1.5 times its width. Nearby page headers, map axes and short image strokes no longer qualify merely by overlapping horizontally.
+
 ## Scanned and image-based tables
 
 ```bash

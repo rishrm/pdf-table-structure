@@ -1,0 +1,71 @@
+Remaining false detections - 5 November 2026
+
+Scope
+Tighten existing table/prose/ruling validation on 967862.pdf. No new models,
+dependencies, detector backends, CLI options or export features. No document
+names, page numbers, source text or reference boxes are used in detection rules.
+
+What changed
+1. A supporting horizontal rule must lie within the candidate's vertical
+   extent (two-point tolerance), overlap at least 75% of its width, measure
+   at least 12 points (the existing pixel-rule minimum), and be no more than
+   1.5 times its width. Nearby running headers, map axes and tiny texture
+   strokes no longer qualify merely because they overlap horizontally.
+2. Word crossings are checked separately for each actual cell divider.
+   At least three cut rows covering at least half its observed rows reject
+   the candidate. Merged-cell interiors do not count as dividers. This closes
+   the case where a wide grid dilutes repeated cuts below the global limit.
+3. Wordy unruled fields separated by ordinary interword-sized gaps are
+   rejected when at least one field lacks recurring left, right or center
+   alignment. Compact numeric fields, aligned multiword fields and supported
+   printed-rule layouts have positive regression controls.
+
+Full 42-page rerun
+Input: 967862.pdf
+SHA-256: 8a739527e58c628ebf118e9e99ec19860d5edf90aa4652735afdf52799ac40b8
+Baseline: 851fbda95791ec6ec4b3282fbe6398355625ca47
+Strategy: auto, JSON only during measurement, no OCR/model calls.
+
+Measure                         Before          After
+Returned candidates                7               2
+Matched real tables                2               2
+False outputs                      5               0
+Missed real tables                 0               0
+Exact row/column counts            2/2             2/2
+Recorded bounds/span checks        2/2             2/2
+Clear negative pages with no grid 35/40           40/40
+
+The two real tables remain exactly identical in full geometry:
+- Page 3: 21 rows x 3 columns, including the wrapped-row repair.
+- Page 6: 24 rows x 4 columns.
+
+Removed false outputs
+- Page 2: map-axis/depth-scale grid; insufficient compatible ruling.
+- Page 11: bibliographic prose; narrow word-sized gap and unstable fields.
+- Page 19: article prose split into six columns; repeated word cuts.
+- Page 31: tiny microscopy-texture grid; short/oversized image strokes.
+- Page 42: reference fragment; unrelated running header no longer supports it.
+Fallbacks were also checked: none reintroduces a table on these pages.
+No new or changed table geometry appears anywhere else in the full rerun.
+
+Validation
+187 automated tests passed (19 new tests). Coverage includes ruled small
+tables, modest rule overhang, coordinate changes, merged headers, isolated
+word crossings, compact numeric fields, left/right/center and mixed field
+alignment, and incomplete pixel evidence. Independent review caught and
+corrected an initial left-alignment-only restriction before final validation.
+The new negative controls fail baseline code loaded in memory, without
+altering the checked-out source.
+
+Stored-rule replay across 24 historically matched true inferred candidates
+preserved all prior rule-support decisions. This is metadata replay only,
+not a fresh test of unavailable source PDFs or of the new prose criteria.
+Final full-run diagnostics contain no backend failures/unavailable warnings.
+
+Limits
+This PDF informed the fixes and is development/regression data. Zero false
+outputs here is not a general accuracy guarantee. References are assistant
+visual annotations, not human-validated ground truth. Irregular borderless
+layouts can remain ambiguous and returned structures remain unreviewed.
+The seven other original PDFs are still unavailable and were not rerun.
+The implementation exports structure/overlays, not accessibility-tagged PDFs.
