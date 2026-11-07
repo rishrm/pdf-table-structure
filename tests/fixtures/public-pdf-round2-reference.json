@@ -1,0 +1,1137 @@
+{
+  "annotation_note": "Primary-assistant visual review of all36sourcepages, assisted by native geometry. Independent annotation was interrupted; development references were completed with baseline outputs available, so not blind or human-validated gold truth. Reserved definitions completed after code freeze and before reserved outputs; no tuning on reserved results. Exact-row ambiguities are null; explanatory footnotes excluded.",
+  "documents": [
+    {
+      "filename": "camelot-agstat.pdf",
+      "input_sha256": "9c0a9e9afc63ffb01b80f57a72939c743f9e1ab138a38a07017de6fc80568650",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "table_pages": [
+        1
+      ],
+      "tables": [
+        {
+          "id": "agstat-p1",
+          "page": 1,
+          "bbox_points": [
+            51.2,
+            127.5,
+            543,
+            752.5
+          ],
+          "logical_rows": 33,
+          "logical_columns": 11,
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 2,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 3,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 4,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 5,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 6,
+              "rowspan": 1,
+              "colspan": 3
+            },
+            {
+              "row": 0,
+              "column": 9,
+              "rowspan": 1,
+              "colspan": 2
+            }
+          ],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Two header tiers,30 districts and total. Caption/page number excluded."
+          ],
+          "cell_bbox_ground_truth_available": false
+        }
+      ],
+      "ambiguous_regions": [],
+      "negative_pages": [],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-background_lines_1.pdf",
+      "input_sha256": "fe4c0ea9c600f03fdc8c4d6d030265116178a71fa02fcbf6f4d0ae149ea608fb",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "table_pages": [
+        1
+      ],
+      "tables": [
+        {
+          "id": "background-p1",
+          "page": 1,
+          "bbox_points": [
+            54.2,
+            303.1,
+            541.2,
+            530.5
+          ],
+          "logical_rows": 8,
+          "logical_columns": 8,
+          "required_header_spans": [],
+          "required_body_spans": [
+            {
+              "row": 1,
+              "column": 2,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 3,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 4,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 5,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 6,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 7,
+              "rowspan": 2,
+              "colspan": 1
+            }
+          ],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Header, six named regions, total. Delhi/Rajasthan share six numeric cells."
+          ],
+          "cell_bbox_ground_truth_available": false
+        }
+      ],
+      "ambiguous_regions": [],
+      "negative_pages": [],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-diesel_engines.pdf",
+      "input_sha256": "6675404fa9f9cd8fb9d34d9d73056fe8e4823519adab13e8b91233d667ffd13c",
+      "page_count": 23,
+      "input_type": "selectable_text",
+      "table_pages": [
+        2,
+        3,
+        4,
+        5,
+        11,
+        12,
+        13,
+        18,
+        19,
+        20
+      ],
+      "tables": [
+        {
+          "id": "diesel-p2",
+          "page": 2,
+          "bbox_points": [
+            59.3,
+            95.0,
+            550.2,
+            617.6
+          ],
+          "logical_rows": null,
+          "logical_columns": 2,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Numbered records include unruled grouped bullets and unnumbered introductory lines; exact row grouping is ambiguous. Footnotes excluded where present."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "diesel-p3",
+          "page": 3,
+          "bbox_points": [
+            30.9,
+            95.0,
+            521.8,
+            607.0
+          ],
+          "logical_rows": null,
+          "logical_columns": 2,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Numbered records include unruled grouped bullets and unnumbered introductory lines; exact row grouping is ambiguous. Footnotes excluded where present."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "diesel-p4",
+          "page": 4,
+          "bbox_points": [
+            59.3,
+            95.0,
+            550.2,
+            754.7
+          ],
+          "logical_rows": null,
+          "logical_columns": 2,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Numbered records include unruled grouped bullets and unnumbered introductory lines; exact row grouping is ambiguous. Footnotes excluded where present."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "diesel-p5",
+          "page": 5,
+          "bbox_points": [
+            30.9,
+            79.0,
+            521.8,
+            148.6
+          ],
+          "logical_rows": 5,
+          "logical_columns": 2,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Repeated header plus records45-48. Full-width note block below the separator is excluded."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "diesel-p11",
+          "page": 11,
+          "bbox_points": [
+            30.9,
+            95.0,
+            521.8,
+            655.6
+          ],
+          "logical_rows": 29,
+          "logical_columns": 8,
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 2
+            },
+            {
+              "row": 0,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 5
+            },
+            {
+              "row": 1,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 3
+            },
+            {
+              "row": 1,
+              "column": 6,
+              "rowspan": 1,
+              "colspan": 2
+            }
+          ],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Three header tiers; explicit low/high subrows retained. Explanatory note band excluded."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "diesel-p12-top",
+          "page": 12,
+          "bbox_points": [
+            59.3,
+            95.2,
+            550.2,
+            440.4
+          ],
+          "logical_rows": 19,
+          "logical_columns": 8,
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 2
+            },
+            {
+              "row": 0,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 5
+            },
+            {
+              "row": 1,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 3
+            },
+            {
+              "row": 1,
+              "column": 6,
+              "rowspan": 1,
+              "colspan": 2
+            }
+          ],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Three header tiers; explicit low/high subrows retained. Explanatory note band excluded."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "diesel-p12-bottom",
+          "page": 12,
+          "bbox_points": [
+            59.3,
+            509.9,
+            550.2,
+            751.9
+          ],
+          "logical_rows": 13,
+          "logical_columns": 8,
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 2
+            },
+            {
+              "row": 0,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 5
+            },
+            {
+              "row": 1,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 3
+            },
+            {
+              "row": 1,
+              "column": 6,
+              "rowspan": 1,
+              "colspan": 2
+            }
+          ],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Three header tiers; explicit low/high subrows retained. Explanatory note band excluded."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "diesel-p13",
+          "page": 13,
+          "bbox_points": [
+            30.9,
+            103.4,
+            521.8,
+            299.4
+          ],
+          "logical_rows": 11,
+          "logical_columns": 8,
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 2
+            },
+            {
+              "row": 0,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 5
+            },
+            {
+              "row": 1,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 3
+            },
+            {
+              "row": 1,
+              "column": 6,
+              "rowspan": 1,
+              "colspan": 2
+            }
+          ],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Three header tiers; explicit low/high subrows retained. Explanatory note band excluded."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "diesel-p18",
+          "page": 18,
+          "bbox_points": [
+            59.3,
+            101.0,
+            550.2,
+            755.3
+          ],
+          "logical_rows": 27,
+          "logical_columns": 9,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "One header plus numbered records1-26. Body spans not exhaustively annotated."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "diesel-p19",
+          "page": 19,
+          "bbox_points": [
+            30.9,
+            79.0,
+            521.8,
+            572.7
+          ],
+          "logical_rows": 14,
+          "logical_columns": 9,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "One header; records27-30 each have two explicit conditional subrows, records31-35 one each. Explanatory notes excluded."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "diesel-p20",
+          "page": 20,
+          "bbox_points": [
+            55.5,
+            180.6,
+            294,
+            411.5
+          ],
+          "logical_rows": 13,
+          "logical_columns": 2,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Thirteen abbreviation-definition entries; colon belongs to label field. Two definitions wrap; introductory and subsequent prose excluded."
+          ],
+          "cell_bbox_ground_truth_available": false
+        }
+      ],
+      "ambiguous_regions": [],
+      "negative_pages": [
+        1,
+        6,
+        7,
+        8,
+        9,
+        10,
+        14,
+        15,
+        16,
+        17,
+        21,
+        22,
+        23
+      ],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-medicine.pdf",
+      "input_sha256": "0f285761c1e26840dcac53da289769ec61fe82fee160080bfc092f71c46e420f",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "table_pages": [
+        1
+      ],
+      "tables": [
+        {
+          "id": "medicine-p1",
+          "page": 1,
+          "bbox_points": [
+            35.5,
+            37.1,
+            595.2,
+            693.6
+          ],
+          "logical_rows": 29,
+          "logical_columns": 10,
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 10
+            },
+            {
+              "row": 1,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 2,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 3,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 4,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 5,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 6,
+              "rowspan": 1,
+              "colspan": 4
+            }
+          ],
+          "required_body_spans": [
+            {
+              "row": 3,
+              "column": 0,
+              "rowspan": 7,
+              "colspan": 1
+            },
+            {
+              "row": 10,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 12,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 14,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 16,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 27,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            }
+          ],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Internal title plus two header tiers and26 item records. Source review corrects the interrupted draft count of25 records."
+          ],
+          "cell_bbox_ground_truth_available": false
+        }
+      ],
+      "ambiguous_regions": [],
+      "negative_pages": [],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-twotables_1.pdf",
+      "input_sha256": "971692a90eb13fd852824cfb3fbfe44eae0987017a6ff7dc79366a46fd867601",
+      "page_count": 1,
+      "input_type": "selectable_text",
+      "table_pages": [
+        1
+      ],
+      "tables": [
+        {
+          "id": "twotables-p1-top",
+          "page": 1,
+          "bbox_points": [
+            23.7,
+            14.5,
+            819.0,
+            240.1
+          ],
+          "logical_rows": 3,
+          "logical_columns": 10,
+          "required_header_spans": [],
+          "required_body_spans": [
+            {
+              "row": 1,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 1,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 1,
+              "column": 2,
+              "rowspan": 2,
+              "colspan": 1
+            }
+          ],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Header plus two records; three leading cells span both records."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "twotables-p1-bottom",
+          "page": 1,
+          "bbox_points": [
+            23.7,
+            273.6,
+            819.0,
+            529.5
+          ],
+          "logical_rows": 5,
+          "logical_columns": 9,
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 9
+            }
+          ],
+          "required_body_spans": [
+            {
+              "row": 2,
+              "column": 0,
+              "rowspan": 3,
+              "colspan": 1
+            },
+            {
+              "row": 2,
+              "column": 1,
+              "rowspan": 3,
+              "colspan": 1
+            }
+          ],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Internal title, header and three records. Nine fields; no date-reported field in this segment."
+          ],
+          "cell_bbox_ground_truth_available": false
+        }
+      ],
+      "ambiguous_regions": [],
+      "negative_pages": [],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-vertical_header.pdf",
+      "input_sha256": "eb1092be407cb17cd25837c52758d1305f6719268c6f824f73a7d2bd18c95760",
+      "page_count": 5,
+      "input_type": "selectable_text",
+      "table_pages": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "tables": [
+        {
+          "id": "vertical-p1",
+          "page": 1,
+          "bbox_points": [
+            0,
+            84.4,
+            753,
+            480
+          ],
+          "logical_rows": null,
+          "logical_columns": null,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Main election matrix includes external district labels. Blank separator bands, empty candidate slots and labels outside the ruled grid make logical row/column conventions ambiguous; detection is scored, exact dimensions excluded. PDF origin is approximately(-11.99,-11.96)."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "vertical-p2",
+          "page": 2,
+          "bbox_points": [
+            0,
+            84.4,
+            668,
+            480
+          ],
+          "logical_rows": null,
+          "logical_columns": null,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Main election matrix includes external district labels. Blank separator bands, empty candidate slots and labels outside the ruled grid make logical row/column conventions ambiguous; detection is scored, exact dimensions excluded. PDF origin is approximately(-11.99,-11.96)."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "vertical-p3",
+          "page": 3,
+          "bbox_points": [
+            0,
+            84.4,
+            668,
+            480
+          ],
+          "logical_rows": null,
+          "logical_columns": null,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Main election matrix includes external district labels. Blank separator bands, empty candidate slots and labels outside the ruled grid make logical row/column conventions ambiguous; detection is scored, exact dimensions excluded. PDF origin is approximately(-11.99,-11.96)."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "vertical-p4",
+          "page": 4,
+          "bbox_points": [
+            0,
+            84.4,
+            471,
+            480
+          ],
+          "logical_rows": null,
+          "logical_columns": null,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Main election matrix includes external district labels. Blank separator bands, empty candidate slots and labels outside the ruled grid make logical row/column conventions ambiguous; detection is scored, exact dimensions excluded. PDF origin is approximately(-11.99,-11.96)."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "vertical-p5",
+          "page": 5,
+          "bbox_points": [
+            39.0,
+            42.0,
+            479.6,
+            709.5
+          ],
+          "logical_rows": 52,
+          "logical_columns": 6,
+          "required_header_spans": [],
+          "required_body_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 6
+            },
+            {
+              "row": 4,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 6
+            },
+            {
+              "row": 12,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 6
+            },
+            {
+              "row": 16,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 6
+            },
+            {
+              "row": 22,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 6
+            },
+            {
+              "row": 25,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 6
+            },
+            {
+              "row": 28,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 6
+            },
+            {
+              "row": 32,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 6
+            },
+            {
+              "row": 35,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 6
+            },
+            {
+              "row": 39,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 6
+            },
+            {
+              "row": 43,
+              "column": 0,
+              "rowspan": 1,
+              "colspan": 6
+            }
+          ],
+          "table_kind": "reviewed_public_fixture",
+          "ambiguities": [
+            "Keep explicit blank ruled rows and11 full-width municipality bands. Rows counted from the displayed printed grid."
+          ],
+          "cell_bbox_ground_truth_available": false
+        }
+      ],
+      "ambiguous_regions": [
+        {
+          "id": "vertical-p1-detached-total",
+          "page": 1,
+          "bbox_points": [
+            45,
+            491,
+            753,
+            513
+          ],
+          "reason": "Detached single-row total strip may be a continuation of the main table or a separate table segment; excluded from primary presence denominator."
+        },
+        {
+          "id": "vertical-p2-detached-total",
+          "page": 2,
+          "bbox_points": [
+            45,
+            491,
+            668,
+            513
+          ],
+          "reason": "Detached single-row total strip may be a continuation of the main table or a separate table segment; excluded from primary presence denominator."
+        },
+        {
+          "id": "vertical-p3-detached-total",
+          "page": 3,
+          "bbox_points": [
+            45,
+            491,
+            668,
+            513
+          ],
+          "reason": "Detached single-row total strip may be a continuation of the main table or a separate table segment; excluded from primary presence denominator."
+        },
+        {
+          "id": "vertical-p4-detached-total",
+          "page": 4,
+          "bbox_points": [
+            45,
+            491,
+            471,
+            513
+          ],
+          "reason": "Detached single-row total strip may be a continuation of the main table or a separate table segment; excluded from primary presence denominator."
+        }
+      ],
+      "negative_pages": [],
+      "evaluation_cohort": "development"
+    },
+    {
+      "filename": "camelot-health.pdf",
+      "input_sha256": "efdcd7794fc9397dd3626075f025fa27a95b1180331b0b2c5b89a6c85ae3c4f6",
+      "page_count": 1,
+      "table_pages": [
+        1
+      ],
+      "tables": [
+        {
+          "id": "health-p1",
+          "page": 1,
+          "bbox_points": [
+            35.8,
+            67.8,
+            579.6,
+            623.2
+          ],
+          "logical_rows": 25,
+          "logical_columns": 8,
+          "required_header_spans": [
+            {
+              "row": 0,
+              "column": 0,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 1,
+              "rowspan": 1,
+              "colspan": 2
+            },
+            {
+              "row": 0,
+              "column": 3,
+              "rowspan": 1,
+              "colspan": 2
+            },
+            {
+              "row": 0,
+              "column": 5,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 6,
+              "rowspan": 2,
+              "colspan": 1
+            },
+            {
+              "row": 0,
+              "column": 7,
+              "rowspan": 2,
+              "colspan": 1
+            }
+          ],
+          "required_body_spans": [],
+          "table_kind": "reserved_public_fixture",
+          "ambiguities": [
+            "Exclude the numbered Table5 caption band. Two column-header tiers plus23 named states; colored row bands do not create extra rows."
+          ],
+          "cell_bbox_ground_truth_available": false
+        }
+      ],
+      "ambiguous_regions": [],
+      "negative_pages": [],
+      "evaluation_cohort": "reserved"
+    },
+    {
+      "filename": "camelot-birdisland.pdf",
+      "input_sha256": "08a12a3530730ac983dffb4d4dd376e7dee2c98a183868da35dc6f632fe3d463",
+      "page_count": 2,
+      "table_pages": [
+        1,
+        2
+      ],
+      "tables": [
+        {
+          "id": "birdisland-p1",
+          "page": 1,
+          "bbox_points": [
+            78.4,
+            209.6,
+            545,
+            636
+          ],
+          "logical_rows": null,
+          "logical_columns": 11,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reserved_public_fixture",
+          "ambiguities": [
+            "One header and30 variety records. Three lower summary-statistic rows may be included (34rows) or treated as a separate summary (31rows); exact rows excluded. Signature and binder-hole decoration are not fields."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "birdisland-p2-left",
+          "page": 2,
+          "bbox_points": [
+            78.3,
+            185.9,
+            302.4,
+            460.9
+          ],
+          "logical_rows": 26,
+          "logical_columns": 2,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reserved_public_fixture",
+          "ambiguities": [
+            "Technologies heading excluded;26 abbreviation-definition records. No printed outerframe, reference adds approximately4pt padding."
+          ],
+          "cell_bbox_ground_truth_available": false
+        },
+        {
+          "id": "birdisland-p2-right",
+          "page": 2,
+          "bbox_points": [
+            321.9,
+            185.9,
+            545.9,
+            512.8
+          ],
+          "logical_rows": 31,
+          "logical_columns": 2,
+          "required_header_spans": [],
+          "required_body_spans": [],
+          "table_kind": "reserved_public_fixture",
+          "ambiguities": [
+            "Seed Treatments heading excluded;31 abbreviation-definition records. Subsequent Trademarks heading/prose excluded."
+          ],
+          "cell_bbox_ground_truth_available": false
+        }
+      ],
+      "ambiguous_regions": [
+        {
+          "id": "birdisland-p1-metadata",
+          "page": 1,
+          "bbox_points": [
+            63,
+            112,
+            360,
+            200
+          ],
+          "reason": "Field/value metadata and planting/harvest details; tabular versus form grouping ambiguous."
+        },
+        {
+          "id": "birdisland-p1-footer",
+          "page": 1,
+          "bbox_points": [
+            63,
+            690,
+            558,
+            730
+          ],
+          "reason": "Single-line yield factors plus explanatory notes; table versus footnote panel interpretation ambiguous."
+        }
+      ],
+      "negative_pages": [],
+      "evaluation_cohort": "reserved"
+    },
+    {
+      "filename": "camelot-empty.pdf",
+      "input_sha256": "c4baea244855cbc08644775c889a15611e83167fcc7d7f3619aea24bcfe12d8f",
+      "page_count": 1,
+      "table_pages": [],
+      "tables": [],
+      "ambiguous_regions": [],
+      "negative_pages": [
+        1
+      ],
+      "evaluation_cohort": "reserved"
+    }
+  ]
+}

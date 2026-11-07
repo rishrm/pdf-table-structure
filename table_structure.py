@@ -83,6 +83,63 @@ def word_boxes_only(page):
             for word in page.extract_words(x_tolerance_ratio=0.15)]
 
 
+def vector_geometry_region(region):
+    """Ignore redundant fill-only repaint edges, retaining the original PDF.
+
+    A contained rectangle of the same color adds no boundary by itself. Keep
+    thin rules, strokes, and any rectangle whose interior meets another color
+    or drawing. The filtered view is used only by the vector table finder.
+    """
+    rects = getattr(region, "rects", [])
+    if not rects or not hasattr(region, "filter"):
+        return region, {"status": "unchanged", "ignored_repaint_rectangles": 0}
+    drawings = list(getattr(region, "lines", [])) + list(getattr(region, "curves", [])) + \
+        list(getattr(region, "images", []))
+    if len(rects) > 1000 or len(drawings) > 6000:
+        return region, {"status": "budget_exceeded", "ignored_repaint_rectangles": 0}
+
+    def box(obj):
+        b = tuple(float(obj[k]) for k in ("x0", "top", "x1", "bottom"))
+        if not all(math.isfinite(v) for v in b):
+            raise ValueError("nonfinite_geometry")
+        return b
+
+    def color(obj):
+        value = obj.get("non_stroking_color")
+        if isinstance(value, (int, float)):
+            value = (value,)
+        if not isinstance(value, (list, tuple)) or len(value) not in (1, 3, 4) or \
+                any(not isinstance(v, (int, float)) or not math.isfinite(v) for v in value):
+            return None
+        return tuple(value)
+
+    def meets_interior(a, b):
+        return min(a[2] - .01, b[2]) >= max(a[0] + .01, b[0]) and \
+               min(a[3] - .01, b[3]) >= max(a[1] + .01, b[1])
+
+    info = [(obj, box(obj), color(obj)) for obj in rects]
+    blockers = [box(obj) for obj in drawings]
+    fills = [item for item in info if item[0].get("fill") and not item[0].get("stroke")
+             and item[2] is not None and min(item[1][2] - item[1][0], item[1][3] - item[1][1]) > 1]
+    ignored = set()
+    for obj, b, ink in fills:
+        area = (b[2] - b[0]) * (b[3] - b[1])
+        contained = any(other is not obj and other_ink == ink and
+            outer[0] <= b[0] and outer[1] <= b[1] and outer[2] >= b[2] and outer[3] >= b[3] and
+            (outer[2] - outer[0]) * (outer[3] - outer[1]) > area + 1
+            for other, outer, other_ink in fills)
+        if not contained or any(meets_interior(b, other) for other in blockers):
+            continue
+        if any(other is not obj and (other.get("stroke") or
+                (other.get("fill") and other_ink != ink)) and meets_interior(b, other_box)
+               for other, other_box, other_ink in info):
+            continue
+        ignored.add(id(obj))
+    details = {"status": "applied" if ignored else "unchanged",
+               "ignored_repaint_rectangles": len(ignored)}
+    return (region.filter(lambda obj: id(obj) not in ignored) if ignored else region), details
+
+
 def boxes_in_table(boxes, bbox):
     return [box for box in boxes if
             bbox[0] <= (box[0] + box[2]) / 2 <= bbox[2] and
@@ -533,7 +590,18 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                     "snap_tolerance": tolerance, "join_tolerance": tolerance,
                     "intersection_tolerance": tolerance}
         try:
-            ingest(region.find_tables(settings), method)
+            geometry = region
+            if method == "lines":
+                try:
+                    geometry, details = vector_geometry_region(region)
+                    diagnostics["vector_fill_cleanup"] = details
+                except MemoryError:
+                    raise
+                except Exception as exc:
+                    diagnostics["vector_fill_cleanup"] = {"status": "unavailable",
+                        "error_type": type(exc).__name__}
+                    warnings.append(f"vector_fill_cleanup_failed:{type(exc).__name__}")
+            ingest(geometry.find_tables(settings), method)
         except MemoryError:
             raise
         except Exception as exc:

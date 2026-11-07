@@ -1,0 +1,104 @@
+{
+  "note": "Public source PDFs retained locally outsideGit; pinned upstream revision and verified SHA-256.",
+  "documents": [
+    {
+      "id": "camelot-agstat",
+      "cohort": "development",
+      "repository": "camelot-dev/camelot",
+      "revision": "92777b852e00933a5c4b9ba642601784604356cd",
+      "path": "tests/files/agstat.pdf",
+      "url": "https://raw.githubusercontent.com/camelot-dev/camelot/92777b852e00933a5c4b9ba642601784604356cd/tests/files/agstat.pdf",
+      "input_sha256": "9c0a9e9afc63ffb01b80f57a72939c743f9e1ab138a38a07017de6fc80568650",
+      "bytes": 15695,
+      "pages": 1
+    },
+    {
+      "id": "camelot-diesel_engines",
+      "cohort": "development",
+      "repository": "camelot-dev/camelot",
+      "revision": "92777b852e00933a5c4b9ba642601784604356cd",
+      "path": "tests/files/diesel_engines.pdf",
+      "url": "https://raw.githubusercontent.com/camelot-dev/camelot/92777b852e00933a5c4b9ba642601784604356cd/tests/files/diesel_engines.pdf",
+      "input_sha256": "6675404fa9f9cd8fb9d34d9d73056fe8e4823519adab13e8b91233d667ffd13c",
+      "bytes": 278888,
+      "pages": 23
+    },
+    {
+      "id": "camelot-twotables_1",
+      "cohort": "development",
+      "repository": "camelot-dev/camelot",
+      "revision": "92777b852e00933a5c4b9ba642601784604356cd",
+      "path": "tests/files/twotables_1.pdf",
+      "url": "https://raw.githubusercontent.com/camelot-dev/camelot/92777b852e00933a5c4b9ba642601784604356cd/tests/files/twotables_1.pdf",
+      "input_sha256": "971692a90eb13fd852824cfb3fbfe44eae0987017a6ff7dc79366a46fd867601",
+      "bytes": 14445,
+      "pages": 1
+    },
+    {
+      "id": "camelot-background_lines_1",
+      "cohort": "development",
+      "repository": "camelot-dev/camelot",
+      "revision": "92777b852e00933a5c4b9ba642601784604356cd",
+      "path": "tests/files/background_lines_1.pdf",
+      "url": "https://raw.githubusercontent.com/camelot-dev/camelot/92777b852e00933a5c4b9ba642601784604356cd/tests/files/background_lines_1.pdf",
+      "input_sha256": "fe4c0ea9c600f03fdc8c4d6d030265116178a71fa02fcbf6f4d0ae149ea608fb",
+      "bytes": 85183,
+      "pages": 1
+    },
+    {
+      "id": "camelot-vertical_header",
+      "cohort": "development",
+      "repository": "camelot-dev/camelot",
+      "revision": "92777b852e00933a5c4b9ba642601784604356cd",
+      "path": "tests/files/vertical_header.pdf",
+      "url": "https://raw.githubusercontent.com/camelot-dev/camelot/92777b852e00933a5c4b9ba642601784604356cd/tests/files/vertical_header.pdf",
+      "input_sha256": "eb1092be407cb17cd25837c52758d1305f6719268c6f824f73a7d2bd18c95760",
+      "bytes": 83067,
+      "pages": 5
+    },
+    {
+      "id": "camelot-medicine",
+      "cohort": "development",
+      "repository": "camelot-dev/camelot",
+      "revision": "92777b852e00933a5c4b9ba642601784604356cd",
+      "path": "tests/files/medicine.pdf",
+      "url": "https://raw.githubusercontent.com/camelot-dev/camelot/92777b852e00933a5c4b9ba642601784604356cd/tests/files/medicine.pdf",
+      "input_sha256": "0f285761c1e26840dcac53da289769ec61fe82fee160080bfc092f71c46e420f",
+      "bytes": 190226,
+      "pages": 1
+    },
+    {
+      "id": "camelot-health",
+      "cohort": "reserved",
+      "repository": "camelot-dev/camelot",
+      "revision": "92777b852e00933a5c4b9ba642601784604356cd",
+      "path": "tests/files/health.pdf",
+      "url": "https://raw.githubusercontent.com/camelot-dev/camelot/92777b852e00933a5c4b9ba642601784604356cd/tests/files/health.pdf",
+      "input_sha256": "efdcd7794fc9397dd3626075f025fa27a95b1180331b0b2c5b89a6c85ae3c4f6",
+      "bytes": 87419,
+      "pages": 1
+    },
+    {
+      "id": "camelot-birdisland",
+      "cohort": "reserved",
+      "repository": "camelot-dev/camelot",
+      "revision": "92777b852e00933a5c4b9ba642601784604356cd",
+      "path": "tests/files/birdisland.pdf",
+      "url": "https://raw.githubusercontent.com/camelot-dev/camelot/92777b852e00933a5c4b9ba642601784604356cd/tests/files/birdisland.pdf",
+      "input_sha256": "08a12a3530730ac983dffb4d4dd376e7dee2c98a183868da35dc6f632fe3d463",
+      "bytes": 144921,
+      "pages": 2
+    },
+    {
+      "id": "camelot-empty",
+      "cohort": "reserved",
+      "repository": "camelot-dev/camelot",
+      "revision": "92777b852e00933a5c4b9ba642601784604356cd",
+      "path": "tests/files/empty.pdf",
+      "url": "https://raw.githubusercontent.com/camelot-dev/camelot/92777b852e00933a5c4b9ba642601784604356cd/tests/files/empty.pdf",
+      "input_sha256": "c4baea244855cbc08644775c889a15611e83167fcc7d7f3619aea24bcfe12d8f",
+      "bytes": 2353,
+      "pages": 1
+    }
+  ]
+}

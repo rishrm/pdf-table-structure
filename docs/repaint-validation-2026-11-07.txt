@@ -1,0 +1,72 @@
+Additional PDF testing and redundant-fill cleanup - 7 November 2026
+
+Scope
+Added nine public PDFs (36 pages) from the same pinned Camelot corpus.
+Rechecked the previous 16 public PDFs (17 pages) and retained 967862.pdf (42 pages):
+26 PDFs / 95 pages total. Source PDFs are retained locally; repository fixtures
+record pinned source URLs, SHA-256 hashes and visual references. No models,
+libraries, new detector backends, CLI options or export formats were added.
+
+Fix
+Some documents paint a cell background and then repaint smaller rectangles
+behind its text. Treating all those invisible repaint edges as table borders
+can produce extra columns, overlapping cells or a missing table.
+Vector table finding now ignores a fill-only rectangle strictly contained in
+a larger same-color fill. Strokes, thin rules, different/unknown colors,
+partial overlaps and any intersecting drawing are protected. Cleanup is
+bounded to 1,000 rectangles and 6,000 other drawings; failure or budget exhaustion
+retains the original vector route. Source PDFs/rendering are not modified.
+
+Concrete results
+- twotables_1: both tables are now recovered. The unchanged top table is 3x10;
+  the previously rejected lower table is 5x9, including its full-width title
+  and merged leading cells. 54 redundant fills are ignored.
+- Earlier missing_values fixture improves 42x7 to 41x6, but its reference is
+  40x5. This is partial progress, NOT a correct-grid success. Spacer and
+  footnote interpretation remain unresolved.
+- No previously successful count/checklist case was lost in these runs.
+- 967862.pdf retains exactly its 21x3 and 24x4 grids with zero false outputs.
+
+New corpus results, baseline f538e1e versus current code
+                                  Before      After
+Development regions matched       19/21       20/21
+Development exact dimensions        6/14        7/14
+Development recorded checklist      6/14        7/14
+Development unmatched outputs          2           2
+Reserved regions matched             4/4         4/4
+Reserved exact dimensions            0/3         0/3
+Reserved recorded checklist          0/3         0/3
+Reserved unmatched outputs             0           0
+
+The three reserved PDFs were evaluated after implementation freeze, with no
+retuning. They did NOT improve. Zero unmatched outputs there does not imply
+correct structures: the health table has major row/column errors, while the
+two abbreviation tables still absorb their headings as rows. The first bird
+table's summary-row convention remains unscored.
+
+Annotation limits
+Source review covers all new pages. Interrupted independent review was
+completed by the primary assistant with development predictions available;
+development annotations are not blind. Reserved references were completed
+from source images after code freeze and before reserved outputs. None is
+human-validated ground truth. Grouped bullets and election separator/label
+conventions are explicitly ambiguous, and detached totals/metadata are
+reported separately. Explanatory footnote bands are excluded even if boxed.
+Required spans and outer-bound checks are a limited checklist, not a full
+cell-box accuracy benchmark or a universal success rate.
+
+Remaining problems
+The diesel manual still merges logical records, includes explanatory notes
+and accepts a plot grid. A short continued table is obscured by its much
+larger note block. Dense and heavily shaded tables remain weak cases.
+The prior SCOTUS false table and earlier dense-table errors remain.
+
+Verification
+220 automated tests pass, including 10 new tests for repaint cleanup, genuine
+rules, differently colored/overlapping drawings, unsupported colors, bounded
+work, unchanged inputs and sanitized failure recovery. A real synthetic PDF
+demonstrates that repaint edges invent extra columns before cleanup.
+Before/after overlays of the recovered table were inspected. All source and
+implementation hashes were checked. The blank reserved PDF emits the expected
+img2table_image_metrics_unavailable advisory; it is not a processing failure.
+No speed, energy or low-power-device claim is made from these runs.
