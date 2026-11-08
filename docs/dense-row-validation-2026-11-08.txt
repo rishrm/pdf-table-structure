@@ -1,0 +1,62 @@
+Dense full-width body rows - 8 November 2026
+
+Scope
+Continue improving the existing structure-only CPU pipeline. No models,
+dependencies, detector backends, CLI options or export formats added.
+Baseline: 67e25d2f0cbf6af880d55be7999a9b663d2d727a.
+
+Problem and correction
+The Senate expense fixture has two printed header tiers with seven columns,
+but its body is enclosed in two full-width cells. The original vector grid
+therefore returns 4x7 instead of the logical 34x7 reference.
+The existing layout repair now recognizes a narrow case of repeated records
+inside such full-width body cells. It requires independently established
+columns above the band, at least four repeated field patterns, aligned leading
+labels and a compact single-word field aligned on the right. Continuations
+must not start in the leading field, cross the inferred row cuts, introduce
+new field patterns or repeatedly cross established columns. Ordinary cells,
+vertical spans, headers, ambiguous sparse rows and paragraphs are preserved.
+Repair failure or unsuccessful validation retains the original vector grid.
+
+Target result
+Senate expenditures: 4x7 -> 34x7, comprising two header tiers, ten salary
+records and 22 expense records. The outer bounds, seven columns and all six
+annotated header spans are unchanged. Wrapped descriptions stay with their
+records. The frozen recorded count/bounds/span checklist now passes.
+This is not complete per-cell correctness: six source word boxes still cross
+one printed header-derived divider (0.94% of assigned words). The repair is
+geometric and retains semantic_structure_verified:false and review status.
+
+Full saved-corpus verification
+26 PDFs / 95 pages, comprising both public fixture rounds and 967862.pdf.
+All files were rerun on one final code hash and original input hashes verified.
+These are now development/regression data, not an unseen evaluation cohort.
+
+Measure                            Before       After
+Reference regions found             43/44        43/44
+Clear unmatched outputs                 3            3
+Exact row/column counts              20/33        21/33
+Recorded counts/bounds/span checks   19/33        20/33
+Required annotated spans           106/118      106/118
+
+Only the Senate table geometry changed. Every other returned table geometry
+is identical, including the two correct 967862 tables (21x3 and 24x4), where
+zero false detections remain. Five ambiguous candidates are excluded from
+clear false-output counts; eleven ambiguous dimensions are excluded from the
+33-case denominator. References are assistant visual annotations, not
+human-validated ground truth or a representative random sample.
+
+Automated validation
+231 tests pass, including 11 new tests for wrapped descriptions, missing fields,
+competing patterns, aligned fields, unchanged headers/spans/bounds, translations,
+scale changes, word-cut safeguards, processing budgets and failure recovery.
+The real geometry fixture contains coordinates only, not text or PDF pixels.
+The repaired before/after overlays were visually inspected. The blank and
+page-number-only fixtures emit the expected image-metrics-unavailable advisory;
+there were no unexpected backend failures in the final runs.
+
+Remaining limits
+NICS multi-column dense rows, shaded-table spacers, included footnotes and
+the transcript/plot false detections are not solved by this narrow repair.
+No new speed, energy, general-accuracy or PDF-accessibility claim is made.
+The original seven missing TIM PDFs were not part of this saved-corpus rerun.

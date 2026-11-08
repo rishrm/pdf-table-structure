@@ -8,9 +8,106 @@ keep the original candidates.
 from __future__ import annotations
 
 import statistics
+from collections import Counter
 
 MAX_REPAIR_CLUSTERS = 64
 MAX_COMPONENTS = 20_000
+
+
+def repair_dense_word_rows(table, words):
+    """Recover repeated records inside full-width ruled body cells.
+
+    Existing column partitions above the band remain authoritative. Require
+    repeated field occupancy, aligned record labels and an independent compact
+    right-aligned field. Do not interpret words, invent columns, trim notes or
+    split ordinary multi-column cells/vertical spans.
+    """
+    if not 3 <= table["column_count"] <= 32 or len(words) > MAX_COMPONENTS:
+        return None
+    xs, ys = table["x_boundaries"], table["y_boundaries"]
+    width = xs[-1] - xs[0]
+    replacements, notes = {}, []
+
+    def aligned(values, tolerance):
+        values = sorted(values)
+        first = best = 0
+        for last, value in enumerate(values):
+            while value - values[first] > tolerance:
+                first += 1
+            best = max(best, last - first + 1)
+        return best >= .8 * len(values)
+
+    for cell in table["cells"]:
+        row = cell["row"]
+        if row == 0 or cell["row_span"] != 1 or cell["column"] != 0 or \
+                cell["column_span"] != table["column_count"]:
+            continue
+        top, bottom = ys[row:row + 2]
+        # Every logical column must already be represented by a separate cell
+        # above this band. A page box or title cannot supply that evidence.
+        if not all(any(c["column"] == col and c["column_span"] == 1 and
+                       c["row"] + c["row_span"] <= row for c in table["cells"])
+                   for col in range(table["column_count"])):
+            continue
+        local = [w for w in words if xs[0] <= (w[0] + w[2]) / 2 <= xs[-1] and
+                 top <= (w[1] + w[3]) / 2 < bottom]
+        lines, _, height = _lines(local, minimum_boxes=1)
+        if not 4 <= len(lines) <= 200 or height <= 0 or bottom - top < 6 * height:
+            continue
+        fields = [[[w for w in line if a <= (w[0] + w[2]) / 2 < b]
+                    for a, b in zip(xs, xs[1:])] for line in lines]
+        occupancy = [frozenset(c for c, values in enumerate(line) if values) for line in fields]
+        patterns = Counter(occupancy)
+        largest = max(map(len, patterns))
+        signatures = [pattern for pattern in patterns if len(pattern) == largest]
+        if len(signatures) != 1 or largest < 3:
+            continue
+        signature = signatures[0]
+        anchors = [i for i, pattern in enumerate(occupancy) if pattern == signature]
+        if len(anchors) < 4 or anchors[0] != 0:
+            continue
+        first_col, last_col = min(signature), max(signature)
+        if any(not pattern <= signature or (i not in anchors and
+                (first_col in pattern or len(pattern) > .5 * len(signature)))
+               for i, pattern in enumerate(occupancy)):
+            continue
+        last_fields = [fields[i][last_col] for i in anchors]
+        if any(len(values) != 1 for values in last_fields) or \
+                xs[last_col + 1] - xs[last_col] > .2 * width:
+            continue
+        if statistics.median(values[0][2] - values[0][0] for values in last_fields) > \
+                .7 * (xs[last_col + 1] - xs[last_col]):
+            continue
+        if not aligned([values[0][2] for values in last_fields], max(.5, .15 * height)) or \
+                not aligned([min(w[0] for w in fields[i][first_col]) for i in anchors],
+                            max(.5, .15 * height)):
+            continue
+        records = [sum(lines[a:b], []) for a, b in zip(anchors, anchors[1:] + [len(lines)])]
+        cuts = [(max(w[3] for w in a) + min(w[1] for w in b)) / 2
+                for a, b in zip(records, records[1:])]
+        row_bounds = [top] + cuts + [bottom]
+        if any(b - a < 3 for a, b in zip(row_bounds, row_bounds[1:])) or \
+                any(w[1] < y < w[3] for w in local for y in cuts):
+            continue
+        # Printed header edges can be a little text-tight, but never accept
+        # repeated field cuts as a consequence of restoring columns.
+        cut_words = sum(any(w[0] < x - .75 and w[2] > x + .75 for x in xs[1:-1])
+                        for w in local)
+        if cut_words / max(1, len(local)) > .02:
+            continue
+        replacements[cell["id"]] = [(a, c, b, d) for c, d in zip(row_bounds, row_bounds[1:])
+                                     for a, b in zip(xs, xs[1:])]
+        notes.append({"original_row": row, "body_records": len(records),
+                      "physical_lines": len(lines), "occupied_columns": sorted(signature)})
+    if not replacements:
+        return None
+    cells = [box for cell in table["cells"] for box in replacements.get(cell["id"], [cell["bbox"]])]
+    if len(cells) > 4096:
+        return None
+    return cells, {"status": "repaired", "basis": "printed_columns_and_repeated_word_records",
+        "bbox": list(table["bbox"]), "original_row_count": table["row_count"],
+        "columns": table["column_count"], "split_bands": notes,
+        "semantic_structure_verified": False}
 
 
 def bounds(boxes):

@@ -478,6 +478,27 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                 reasons.extend(check_grid(candidate))
             if method == "native" and not backend_details:
                 reasons.append("native_envelope_unverified")
+            if method == "lines" and region.chars and not reasons and any(
+                    c["row"] > 0 and c["row_span"] == 1 and
+                    c["column_span"] == candidate["column_count"] for c in candidate["cells"]):
+                try:
+                    from layout_repair import repair_dense_word_rows
+                    if boxes is None:
+                        boxes = word_boxes_only(region)
+                    repair = repair_dense_word_rows(candidate, boxes)
+                    if repair:
+                        cells, note = repair
+                        rebuilt = structure_from_cells(cells, method, min(tolerance, 1.0))
+                        cuts, evidence = text_evidence(rebuilt, boxes, region.bbox)
+                        if not check_grid(rebuilt) and not cuts:
+                            rebuilt["layout_repair"] = note
+                            rebuilt["evidence"] = evidence
+                            rebuilt["warnings"].append("dense_word_rows_require_review")
+                            candidate = rebuilt
+                except MemoryError:
+                    raise
+                except Exception as exc:
+                    warnings.append(f"dense_word_repair_failed:{type(exc).__name__}")
             if method == "text" and not reasons:
                 if boxes is None:
                     boxes = word_boxes_only(region)
