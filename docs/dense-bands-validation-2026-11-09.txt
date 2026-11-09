@@ -1,0 +1,69 @@
+Dense ruled bands, header tiers and terminal notes - 9 November 2026
+
+Scope
+Extend the existing word-position repair for the dense NICS public fixture.
+No model, dependency, detector backend, CLI option or export format added.
+Baseline: bf33e993447380b085878ba74e8c6401d810742a.
+
+Problem
+The vector finder returned 17x25: eleven printed body bands each contained
+five jurisdiction records, one header tier was collapsed, and the trailing
+notes/disclaimers were included as full-width cells. Two empty body columns
+were real printed fields and must not be deleted.
+
+Correction
+The repair now recognizes repeated compact records across at least three
+consecutive ruled bands. Each band must have consistent field occupancy
+across most columns, predominantly single-token aligned fields and regular
+line spacing. Original columns, including empty ones, remain authoritative.
+A single wrapped row or paragraph cannot establish this pattern.
+
+Header tier recovery additionally requires physical lower-tier vertical
+segments at every needed subdivision and no word crossing the tier boundary.
+Terminal-note exclusion additionally requires a complete single-line data
+row, an empty spacer band, and a final full-width prose block whose words
+cross the table's established column positions. Ordinary summary rows,
+populated spacers and later separate-column cells prevent exclusion.
+All results remain unreviewed and semantic_structure_verified:false.
+
+Target result
+17x25 -> 59x25: one internal title row, two header tiers, 55 jurisdiction
+records and one total row. The bottom boundary moves from 569.256 to 482.750
+PDF points, matching the frozen reference within 0.1 point. Both empty Rentals
+columns are preserved. All seven annotated header spans are recovered.
+The corrected candidate contains 1,363 source word centers with zero word
+cuts under the existing tolerance; 137 note/disclaimer word centers formerly
+inside the candidate are now outside. Source PDF contents are unchanged.
+
+Saved-corpus rerun
+26 PDFs / 95 pages, all rerun against one final code hash and unchanged inputs.
+Only the NICS candidate geometry changes. All other candidates are identical,
+including the previous 34x7 expense-table fix and 967862's two correct tables
+with zero false outputs.
+
+Measure                              Before        After
+Reference regions found               43/44         43/44
+Clear unmatched outputs                   3             3
+Exact row/column counts                21/33         22/33
+Recorded counts/bounds/span checklist  20/33         21/33
+
+Five ambiguous candidates and eleven ambiguous dimension cases remain
+separately reported/excluded under the unchanged reference policy. These
+are assistant visual references, not human-validated ground truth. The
+corpus is development/regression material, not a fresh held-out test.
+
+Validation
+243 tests pass, including 12 new tests covering dense-record repetition,
+empty columns, header-rule requirements, conflicting header words, sparse
+records, uneven spacing, flowing prose, missing totals, populated spacers,
+tabular trailing summaries, coordinate changes and word cuts. Existing
+budget and failure-isolation checks continue to pass. Header and bottom
+before/after overlays were visually inspected. Expected image-metrics
+advisories occur on the blank and page-number-only fixtures; no unexpected
+backend failures were recorded.
+
+Remaining limits
+Other shaded-table, footnote and false-detection cases remain. No universal
+table accuracy, semantic classification, performance/energy or accessibility
+claim follows from this improvement. The seven unavailable original TIM PDFs
+were not rerun. Output remains structure JSON and review overlays.

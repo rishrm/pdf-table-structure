@@ -14,13 +14,12 @@ MAX_REPAIR_CLUSTERS = 64
 MAX_COMPONENTS = 20_000
 
 
-def repair_dense_word_rows(table, words):
-    """Recover repeated records inside full-width ruled body cells.
+def repair_dense_word_rows(table, words, vertical_rules=()):
+    """Recover repeated records in supported dense ruled body layouts.
 
-    Existing column partitions above the band remain authoritative. Require
-    repeated field occupancy, aligned record labels and an independent compact
-    right-aligned field. Do not interpret words, invent columns, trim notes or
-    split ordinary multi-column cells/vertical spans.
+    Full-width bands require prior column partitions and independent aligned
+    record fields. Multi-column bands require several consecutive repetitions
+    of compact aligned fields. No word meanings or document labels are used.
     """
     if not 3 <= table["column_count"] <= 32 or len(words) > MAX_COMPONENTS:
         return None
@@ -100,7 +99,7 @@ def repair_dense_word_rows(table, words):
         notes.append({"original_row": row, "body_records": len(records),
                       "physical_lines": len(lines), "occupied_columns": sorted(signature)})
     if not replacements:
-        return None
+        return _repair_dense_column_bands(table, words, vertical_rules)
     cells = [box for cell in table["cells"] for box in replacements.get(cell["id"], [cell["bbox"]])]
     if len(cells) > 4096:
         return None
@@ -108,6 +107,152 @@ def repair_dense_word_rows(table, words):
         "bbox": list(table["bbox"]), "original_row_count": table["row_count"],
         "columns": table["column_count"], "split_bands": notes,
         "semantic_structure_verified": False}
+
+
+def _repair_dense_column_bands(table, words, vertical_rules):
+    """Split repeated compact records within several consecutive ruled bands.
+
+    This separate pattern requires dense, single-token fields and a recurring
+    row pitch. A single wrapped row or paragraph does not establish it. Empty
+    columns remain in the printed grid. Optional lower-tier header dividers
+    must be supported by physical vertical rule segments.
+    """
+    columns = table["column_count"]
+    if columns < 6 or len(table["cells"]) > 4096:
+        return None
+    xs, ys = table["x_boundaries"], table["y_boundaries"]
+    candidates = {}
+    for row in range(1, table["row_count"]):
+        cells = [c for c in table["cells"] if c["row"] == row]
+        if len(cells) != columns or any(c["row_span"] != 1 or c["column_span"] != 1 for c in cells):
+            continue
+        top, bottom = ys[row:row + 2]
+        local = [w for w in words if xs[0] <= (w[0] + w[2]) / 2 <= xs[-1] and
+                 top <= (w[1] + w[3]) / 2 < bottom]
+        lines, _, height = _lines(local, minimum_boxes=1)
+        if not 3 <= len(lines) <= 100 or height <= 0:
+            continue
+        fields = [[[w for w in line if a <= (w[0] + w[2]) / 2 < b]
+                   for a, b in zip(xs, xs[1:])] for line in lines]
+        patterns = [frozenset(i for i, field in enumerate(line) if field) for line in fields]
+        signature = patterns[0]
+        if len(signature) < .75 * columns or 0 not in signature or columns - 1 not in signature or \
+                any(p != signature for p in patterns):
+            continue
+        compact = [col for col in signature if all(len(line[col]) == 1 for line in fields)]
+        if len(compact) < .75 * len(signature):
+            continue
+        # Every compact field must line up at its left or right edge; flowing
+        # prose spread over several columns does not supply this evidence.
+        if any(min(max(line[col][0][edge] for line in fields) -
+                   min(line[col][0][edge] for line in fields) for edge in (0, 2)) >
+               max(.5, .15 * height) for col in compact):
+            continue
+        starts = [min(w[1] for w in line) for line in lines]
+        pitches = [b - a for a, b in zip(starts, starts[1:])]
+        pitch = statistics.median(pitches)
+        if not height < pitch < 2 * height or max(pitches) - min(pitches) > .15 * height:
+            continue
+        cuts = [(max(w[3] for w in a) + min(w[1] for w in b)) / 2
+                for a, b in zip(lines, lines[1:])]
+        if any(w[1] < y < w[3] for w in local for y in cuts) or \
+                any(w[0] < x - .75 and w[2] > x + .75 for w in local for x in xs[1:-1]):
+            continue
+        boundaries = [top] + cuts + [bottom]
+        if min(b - a for a, b in zip(boundaries, boundaries[1:])) < 3:
+            continue
+        candidates[row] = {"height": height, "pitch": pitch, "signature": signature,
+                           "boundaries": boundaries, "records": len(lines)}
+    runs = []
+    for row, item in candidates.items():
+        if runs and row == runs[-1][-1] + 1 and \
+                item["signature"] == candidates[runs[-1][-1]]["signature"] and \
+                abs(item["pitch"] - candidates[runs[-1][-1]]["pitch"]) <= .15 * item["height"]:
+            runs[-1].append(row)
+        else:
+            runs.append([row])
+    runs = [run for run in runs if len(run) >= 3]
+    if not runs:
+        return None
+    split_rows = {r for run in runs for r in run}
+    cells = [c["bbox"] for c in table["cells"] if c["row"] not in split_rows]
+    for row in sorted(split_rows):
+        row_edges = candidates[row]["boundaries"]
+        cells.extend((a, top, b, bottom) for top, bottom in zip(row_edges, row_edges[1:])
+                     for a, b in zip(xs, xs[1:]))
+    note = {"status": "repaired", "basis": "printed_columns_and_repeated_dense_bands",
+            "original_row_count": table["row_count"], "columns": columns,
+            "split_bands": [{"original_row": r, "body_records": candidates[r]["records"],
+                              "occupied_columns": sorted(candidates[r]["signature"])}
+                             for r in sorted(split_rows)], "semantic_structure_verified": False}
+
+    # A header spanning several columns may contain a lower tier whose short
+    # printed dividers never formed closed cells in the original vector grid.
+    first = min(split_rows)
+    header_row = first - 1
+    header = [c for c in table["cells"] if c["row"] == header_row]
+    if header and all(c["row_span"] == 1 for c in header):
+        top, bottom = ys[header_row:first + 1]
+        needed = sorted({i for c in header if c["column_span"] > 1
+                         for i in range(c["column"] + 1, c["column"] + c["column_span"])})
+        starts = []
+        for i in needed:
+            matches = [r for r in vertical_rules[:20000] if abs(r[0] - xs[i]) <= 1 and
+                       abs(r[2] - xs[i]) <= 1 and top + 3 < r[1] < bottom - 3 and
+                       r[3] >= bottom - 1]
+            if matches:
+                starts.append(min(r[1] for r in matches))
+        if len(needed) >= 3 and len(starts) == len(needed) and max(starts) - min(starts) <= 1:
+            division = statistics.median(starts)
+            ink = [w for w in words if xs[0] <= (w[0] + w[2]) / 2 <= xs[-1] and
+                   top <= (w[1] + w[3]) / 2 < bottom]
+            upper = [w for w in ink if w[3] <= division]
+            lower = [w for w in ink if w[1] >= division]
+            if upper and lower and len(upper) + len(lower) == len(ink) and \
+                    not any(w[0] < x - .75 and w[2] > x + .75 for w in lower for x in xs[1:-1]):
+                original_boxes = {tuple(c["bbox"]) for c in header}
+                cells = [b for b in cells if tuple(b) not in original_boxes]
+                for c in header:
+                    a, b = c["column"], c["column"] + c["column_span"]
+                    if b - a == 1:
+                        cells.append(tuple(c["bbox"]))
+                    else:
+                        cells.append((xs[a], top, xs[b], division))
+                        cells.extend((xs[i], division, xs[i + 1], bottom) for i in range(a, b))
+                note["header_tier_divider"] = division
+
+    # Limit footnote exclusion to a terminal, full-width block separated by an
+    # empty printed band after a complete data row. Ordinary trailing summary
+    # rows, populated spacer bands and interior notes remain in the grid.
+    last = max(split_rows)
+    total_row, spacer_row = last + 1, last + 2
+    total = [c for c in table["cells"] if c["row"] == total_row]
+    tail = [c for c in table["cells"] if c["row"] >= spacer_row]
+    if len(total) == columns and all(c["row_span"] == c["column_span"] == 1 for c in total) and \
+            tail and all(c["row_span"] == 1 and c["column_span"] == columns for c in tail):
+        boundary = ys[spacer_row]
+        spacer_bottom = ys[spacer_row + 1]
+        total_ink = [w for w in words if xs[0] <= (w[0] + w[2]) / 2 <= xs[-1] and
+                     ys[total_row] <= (w[1] + w[3]) / 2 < boundary]
+        total_lines, _, _ = _lines(total_ink, minimum_boxes=1)
+        total_fields = [[w for w in total_ink if a <= (w[0] + w[2]) / 2 < b]
+                        for a, b in zip(xs, xs[1:])]
+        complete_total = len(total_lines) == 1 and \
+            sum(len(field) == 1 for field in total_fields) >= .75 * columns
+        empty = not any(xs[0] <= (w[0] + w[2]) / 2 <= xs[-1] and
+                        boundary <= (w[1] + w[3]) / 2 < spacer_bottom for w in words)
+        tail_words = [w for w in words if xs[0] <= (w[0] + w[2]) / 2 <= xs[-1] and
+                      spacer_bottom <= (w[1] + w[3]) / 2 < ys[-1]]
+        tail_lines, _, _ = _lines(tail_words, minimum_boxes=1)
+        if complete_total and empty and spacer_bottom - boundary >= .75 * candidates[last]["height"] and \
+                len(tail_lines) >= 2 and sum(any(w[0] < x - .75 and w[2] > x + .75
+                    for x in xs[1:-1]) for w in tail_words) >= 3:
+            cells = [b for b in cells if b[3] <= boundary + .001]
+            note["excluded_terminal_note_bbox"] = [xs[0], boundary, xs[-1], ys[-1]]
+    if len(cells) > 4096:
+        return None
+    note["bbox"] = bounds(cells)
+    return cells, note
 
 
 def bounds(boxes):
