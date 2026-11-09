@@ -480,12 +480,15 @@ def detect_page(page, strategy="auto", bbox=None, tolerance=2.0, scan_dpi=144,
                 reasons.append("native_envelope_unverified")
             if method == "lines" and region.chars and not reasons and candidate["column_count"] >= 3:
                 try:
-                    from layout_repair import repair_dense_word_rows
+                    from layout_repair import repair_dense_word_rows, repair_shaded_word_rows
                     if boxes is None:
                         boxes = word_boxes_only(region)
                     vertical = [[e[k] for k in ("x0", "top", "x1", "bottom")]
                                 for e in getattr(region, "vertical_edges", [])[:20000]]
-                    repair = repair_dense_word_rows(candidate, boxes, vertical)
+                    repair = repair_shaded_word_rows(candidate, boxes,
+                        getattr(region, "rects", []), getattr(region, "lines", []))
+                    if repair is None:
+                        repair = repair_dense_word_rows(candidate, boxes, vertical)
                     if repair:
                         cells, note = repair
                         rebuilt = structure_from_cells(cells, method, min(tolerance, 1.0))

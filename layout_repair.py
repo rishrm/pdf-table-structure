@@ -14,6 +14,144 @@ MAX_REPAIR_CLUSTERS = 64
 MAX_COMPONENTS = 20_000
 
 
+def repair_shaded_word_rows(table, words, rectangles, lines=()):
+    """Recover a narrow shaded-grid pattern without deleting empty fields.
+
+    Require two header tiers with a tall label cell, labeled grouped fields,
+    one narrow unlabeled paint spacer, repeated full-width section shading,
+    and aligned data rows. Actual strokes and ambiguous layouts are preserved.
+    """
+    columns = table["column_count"]
+    if not 4 <= columns <= 32 or table["row_count"] < 10 or len(words) > MAX_COMPONENTS or \
+            not rectangles or len(rectangles) > 1000 or len(lines) > 6000:
+        return None
+    xs, ys = table["x_boundaries"], table["y_boundaries"]
+    if not any(c["row"] == 0 and c["column"] == 0 and c["row_span"] == 2 and
+               c["column_span"] == 1 for c in table["cells"]):
+        return None
+    if sum(c["row"] == 0 and c["column_span"] > 1 for c in table["cells"]) < 2:
+        return None
+    if any(xs[0] + 1 < (r["x0"] + r["x1"]) / 2 < xs[-1] - 1 and
+           ys[0] < (r["top"] + r["bottom"]) / 2 < ys[-1] for r in lines):
+        return None
+    if any(r.get("stroke") and max(r["x0"], xs[0]) < min(r["x1"], xs[-1]) and
+           max(r["top"], ys[0]) < min(r["bottom"], ys[-1]) for r in rectangles):
+        return None
+    local = [w for w in words if xs[0] <= (w[0] + w[2]) / 2 <= xs[-1] and
+             ys[0] <= (w[1] + w[3]) / 2 < ys[-1]]
+    if not local:
+        return None
+    height = statistics.median(w[3] - w[1] for w in local)
+    terminal = [c for c in table["cells"] if c["row"] == table["row_count"] - 1]
+    if len(terminal) != 1 or terminal[0]["row_span"] != 1 or terminal[0]["column_span"] != columns:
+        return None
+    data_bottom = ys[-2]
+    header = [w for w in local if (w[1] + w[3]) / 2 < ys[2]]
+    body = [w for w in local if ys[2] <= (w[1] + w[3]) / 2 < data_bottom]
+    candidates = []
+    for col in range(1, columns - 1):
+        width = xs[col + 1] - xs[col]
+        others = [b - a for i, (a, b) in enumerate(zip(xs, xs[1:])) if i != col]
+        if width <= .25 * statistics.median(others) and width <= 1.2 * height and \
+                not any(xs[col] <= (w[0] + w[2]) / 2 < xs[col + 1] for w in header + body):
+            candidates.append(col)
+    if len(candidates) != 1:
+        return None
+    spacer = candidates[0]
+    # The spacer must be independently blank in BOTH printed header tiers.
+    if not all(any(c["row"] == row and c["column"] == spacer and
+                   c["row_span"] == c["column_span"] == 1 for c in table["cells"])
+               for row in (0, 1)):
+        return None
+    updated_xs = xs[:spacer] + [(xs[spacer] + xs[spacer + 1]) / 2] + xs[spacer + 2:]
+    if not all(any(a <= (w[0] + w[2]) / 2 < b for w in header)
+               for a, b in zip(updated_xs, updated_xs[1:])):
+        return None
+
+    def band_color(top, bottom):
+        by_color = {}
+        for rect in rectangles:
+            if not rect.get("fill") or rect.get("stroke") or \
+                    abs(rect["top"] - top) > 1 or abs(rect["bottom"] - bottom) > 1:
+                continue
+            value = rect.get("non_stroking_color")
+            color = (value,) if isinstance(value, (int, float)) else \
+                tuple(value) if isinstance(value, (tuple, list)) else None
+            if color is None or len(color) not in (1, 3, 4):
+                continue
+            nonwhite = any(v > .01 for v in color) if len(color) == 4 else any(v < .99 for v in color)
+            if not nonwhite:
+                continue
+            left, right = max(xs[0], rect["x0"]), min(xs[-1], rect["x1"])
+            if left < right:
+                by_color.setdefault(color, []).append([left, 0, right, 1])
+        covering = [color for color, boxes in by_color.items()
+                    if sum(b - a for a, b in _runs(boxes, 1)) >= .95 * (xs[-1] - xs[0])]
+        return covering[0] if len(covering) == 1 else None
+
+    sections, data_rows, section_colors = [], [], []
+    for row in range(2, table["row_count"] - 1):
+        top, bottom = ys[row:row + 2]
+        ink = [w for w in body if top <= (w[1] + w[3]) / 2 < bottom]
+        row_lines, _, _ = _lines(ink, minimum_boxes=1)
+        if len(row_lines) != 1:
+            return None
+        occupied = [col for col, (a, b) in enumerate(zip(updated_xs, updated_xs[1:]))
+                    if any(a <= (w[0] + w[2]) / 2 < b for w in ink)]
+        color = band_color(top, bottom)
+        if occupied == [0] and color is not None:
+            sections.append(row)
+            section_colors.append(color)
+        elif len(occupied) >= 3 and occupied[0] == 0:
+            if any(w[0] < x - .75 and w[2] > x + .75 for w in ink for x in updated_xs[1:-1]):
+                return None
+            data_rows.append(row)
+        else:
+            return None
+    if len(sections) < 3 or len(data_rows) < 6 or len(set(section_colors)) != 1:
+        return None
+    # A distinct full-width terminal band with flowing small text is not an
+    # additional data record. Require a printed rule at the body boundary.
+    note_words = [w for w in local if (w[1] + w[3]) / 2 >= data_bottom]
+    note_lines, _, note_height = _lines(note_words, minimum_boxes=1)
+    note_color = band_color(data_bottom, ys[-1])
+    boundary_rules = [r for r in rectangles if (r.get("fill") or r.get("stroke")) and
+        0 < r["bottom"] - r["top"] <= 1 and
+        abs((r["top"] + r["bottom"]) / 2 - data_bottom) <= 1 and
+        min(r["x1"], xs[-1]) > max(r["x0"], xs[0])]
+    ruled_width = sum(b - a for a, b in _runs([[max(xs[0], r["x0"]), 0,
+        min(xs[-1], r["x1"]), 1] for r in boundary_rules], 1))
+    note_runs = _runs(note_words, max(2, height * .5))
+    if ruled_width < .95 * (xs[-1] - xs[0]) or len(note_lines) < 2 or note_height >= height or \
+            note_color is None or note_color in section_colors or len(note_runs) != 1 or \
+            sum(note_runs[0][0] < x < note_runs[0][1] for x in updated_xs[1:-1]) < 2:
+        return None
+    cells = []
+    def boundary_index(index):
+        return index if index <= spacer else index - 1
+    for cell in table["cells"]:
+        if cell["row"] >= 2:
+            continue
+        a, b = cell["column"], cell["column"] + cell["column_span"]
+        left, right = boundary_index(a), boundary_index(b)
+        if left < right:
+            cells.append((updated_xs[left], cell["bbox"][1], updated_xs[right], cell["bbox"][3]))
+    for row in range(2, table["row_count"] - 1):
+        top, bottom = ys[row:row + 2]
+        if row in sections:
+            cells.append((updated_xs[0], top, updated_xs[-1], bottom))
+        else:
+            cells.extend((a, top, b, bottom) for a, b in zip(updated_xs, updated_xs[1:]))
+    if len(cells) > 4096:
+        return None
+    return cells, {"status": "repaired", "basis": "shaded_header_fields_and_repeated_row_bands",
+        "original_row_count": table["row_count"], "original_column_count": columns,
+        "columns": columns - 1, "section_rows": sections, "body_records": len(data_rows),
+        "removed_spacer_column": spacer, "excluded_terminal_note_bbox":
+            [xs[0], data_bottom, xs[-1], ys[-1]], "bbox": [xs[0], ys[0], xs[-1], data_bottom],
+        "semantic_structure_verified": False}
+
+
 def repair_dense_word_rows(table, words, vertical_rules=()):
     """Recover repeated records in supported dense ruled body layouts.
 

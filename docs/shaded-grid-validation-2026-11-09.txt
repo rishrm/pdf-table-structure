@@ -1,0 +1,59 @@
+Shaded missing-values grid - 9 November 2026
+
+Scope
+Improve the existing geometry/word-position repair on camelot-missing_values.
+Baseline:9ef122cdb564d2b9dd870e1873f525f71cd87ddb. No model, dependency,
+detector backend, CLI option or export format added.
+
+Problem and change
+After redundant-fill cleanup, the source was still returned as41x6 instead
+of40x5. One narrow unlabelled painted spacer was treated as a sixth column,
+large pale areas merged unrelated data rows, section labels were fragmented,
+and a terminal footnote band remained inside the table.
+
+The repair is deliberately narrow: two header tiers with a tall leading
+label cell and at least two grouped fields; exactly one very narrow spacer
+with no field label/data; repeated uniform full-width section shading; and
+single-line body records with supported fields. A distinct smaller-text
+terminal note requires a printed boundary, flowing text and different shading.
+Actual strokes, populated narrow fields and ambiguous patterns preserve the
+original grid. It never removes a field simply because its body is empty.
+
+Result
+41x6 ->40x5, including two header tiers, five section headings and33 data rows.
+Both header-labelled empty columns remain. All eight required header/section
+spans now pass; word-cut fraction is0.0. Bottom boundary531.917pt matches the
+reference531.7pt within normal tolerance, excluding the two-line note below.
+The original PDF is not changed, and semantic_structure_verified remainsfalse.
+
+Full regression comparison
+26 saved PDFs /95pages, unchanged source hashes and reference definitions.
+Only this table geometry changes; every other returned candidate is identical.
+
+Measure                            Before       After
+Reference regions found             43/44        43/44
+Clear unmatched outputs                 3            3
+Exact row/column counts              22/33        23/33
+Recorded bounds/span checklist      21/33        22/33
+Required annotated spans           106/118      112/118
+
+Five ambiguous output candidates and eleven ambiguous dimension cases are
+separately reported/excluded. This is development/regression evidence using
+assistant visual annotations, not human-validated gold truth or a fresh
+held-out evaluation. Detectionprecision93.5% and recall97.7% must not be
+presented as complete table-structure accuracy; exact dimensions are69.7%
+and the limited recorded checklist is66.7% on eligible cases.
+
+Verification
+251 automated tests pass, including eight new tests for header spans, empty
+fields, coordinate changes, populated narrow fields, actual strokes, missing
+section/data evidence, footer boundaries, distinct shading, summary records
+and processing budgets. Header/body and terminal-note overlays were inspected.
+Expected image-metrics advisories remain on blank/page-number-only fixtures;
+no unexpected backend failures occurred. All previous correct cases remain.
+
+Remaining limits
+Other heavily shaded layouts, footnote conventions, graph/transcript false
+detections and the missing continued-table segment remain unresolved. Seven
+original TIM PDFs remain unavailable and are not part of this rerun. No
+general accuracy, energy, speed or accessibility-remediation claim is made.
